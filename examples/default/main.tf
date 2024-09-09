@@ -66,4 +66,10 @@ module "test" {
   administrator_password = random_password.myadminpassword.result
   server_version         = 16
   sku_name               = "GP_Standard_D2s_v3"
+  zone                   = 1
+  high_availability = {
+    mode                      = "ZoneRedundant"
+    standby_availability_zone = 2
+  }
+  tags = null
 }
