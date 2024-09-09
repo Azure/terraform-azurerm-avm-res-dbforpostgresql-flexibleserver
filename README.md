@@ -1,16 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
-# terraform-azurerm-avm-template
+# Azure PostgreSQL Flexible Server module
 
-This is a template repo for Terraform Azure Verified Modules.
-
-Things to do:
-
-1. Set up a GitHub repo environment called `test`.
-1. Configure environment protection rule to ensure that approval is required before deploying to this environment.
-1. Create a user-assigned managed identity in your test subscription.
-1. Create a role assignment for the managed identity on your test subscription, use the minimum required role.
-1. Configure federated identity credentials on the user assigned managed identity. Use the GitHub environment.
-1. Search and update TODOs within the code and remove the TODO comments once complete.
+This is a Terraform module for PostgreSQL Flexible Server in the style of Azure Verified Modules.  For official modules please see <https://aka.ms/AVM>.
 
 > [!IMPORTANT]
 > As the overall AVM framework is not GA (generally available) yet - the CI framework and test automation is not fully functional and implemented across all supported languages yet - breaking changes are expected, and additional customer feedback is yet to be gathered and incorporated. Hence, modules **MUST NOT** be published at version `1.0.0` or higher at this time.
@@ -30,26 +21,21 @@ The following requirements are needed by this module:
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
 
-## Providers
-
-The following providers are used by this module:
-
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.71)
-
-- <a name="provider_random"></a> [random](#provider\_random) (~> 3.5)
-
 ## Resources
 
 The following resources are used by this module:
 
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
+- [azurerm_postgresql_database.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_database) (resource)
+- [azurerm_postgresql_flexible_server.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server) (resource)
 - [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint.this_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
-- [azurerm_resource_group.TODO](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_resource_group_template_deployment.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
-- [random_id.telem](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
+- [modtm_telemetry.telemetry](https://registry.terraform.io/providers/hashicorp/modtm/latest/docs/resources/telemetry) (resource)
+- [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
+- [azurerm_client_config.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
+- [modtm_module_source.telemetry](https://registry.terraform.io/providers/hashicorp/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -78,6 +64,64 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
+### <a name="input_administrator_login"></a> [administrator\_login](#input\_administrator\_login)
+
+Description: (Optional) The Administrator login for the PostgreSQL Flexible Server. Required when `create_mode` is `Default` and `authentication.password_auth_enabled` is `true`.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_administrator_password"></a> [administrator\_password](#input\_administrator\_password)
+
+Description: (Optional) The Password associated with the `administrator_login` for the PostgreSQL Flexible Server. Required when `create_mode` is `Default` and `authentication.password_auth_enabled` is `true`.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_authentication"></a> [authentication](#input\_authentication)
+
+Description: - `active_directory_auth_enabled` - (Optional)  Whether or not Active Directory authentication is allowed to access the PostgreSQL Flexible Server. Defaults to `false`.
+- `password_auth_enabled` - (Optional) Whether or not password authentication is allowed to access the PostgreSQL Flexible Server. Defaults to `true`.
+- `tenant_id` - (Optional) The Tenant ID of the Azure Active Directory which is used by the Active Directory authentication. `active_directory_auth_enabled` must be set to `true`.
+
+Type:
+
+```hcl
+object({
+    active_directory_auth_enabled = optional(bool)
+    password_auth_enabled         = optional(bool)
+    tenant_id                     = optional(string)
+  })
+```
+
+Default: `null`
+
+### <a name="input_auto_grow_enabled"></a> [auto\_grow\_enabled](#input\_auto\_grow\_enabled)
+
+Description: (Optional) Is the storage auto grow for PostgreSQL Flexible Server enabled? Defaults to `false`.
+
+Type: `bool`
+
+Default: `null`
+
+### <a name="input_backup_retention_days"></a> [backup\_retention\_days](#input\_backup\_retention\_days)
+
+Description: (Optional) The backup retention days for the PostgreSQL Flexible Server. Possible values are between `7` and `35` days.
+
+Type: `number`
+
+Default: `null`
+
+### <a name="input_create_mode"></a> [create\_mode](#input\_create\_mode)
+
+Description: (Optional) The creation mode which can be used to restore or replicate existing servers. Possible values are `Default`, `GeoRestore`, `PointInTimeRestore`, `Replica` and `Update`.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
 
 Description: A map describing customer-managed keys to associate with the resource. This includes the following properties:
@@ -99,6 +143,47 @@ object({
     }), null)
   })
 ```
+
+Default: `null`
+
+### <a name="input_databases"></a> [databases](#input\_databases)
+
+Description: - `charset` - (Required)  Specifies the Charset for the PostgreSQL Database, which needs [to be a valid PostgreSQL Charset](https://www.postgresql.org/docs/current/static/multibyte.html). Changing this forces a new resource to be created.
+- `collation` - (Required) Specifies the Collation for the PostgreSQL Database, which needs [to be a valid PostgreSQL Collation](https://www.postgresql.org/docs/current/static/collation.html). Note that Microsoft uses different [notation](https://msdn.microsoft.com/library/windows/desktop/dd373814.aspx)
+- `name` - (Required) Specifies the name of the PostgreSQL Database, which needs [to be a valid PostgreSQL identifier](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS). Changing this forces a new resource to be created.
+- `resource_group_name` - (Required) The name of the resource group in which the PostgreSQL Server exists. Changing this forces a new resource to be created.
+- `server_name` - (Required) Specifies the name of the PostgreSQL Server. Changing this forces a new resource to be created.
+
+---
+`timeouts` block supports the following:
+- `create` - (Defaults to 60 minutes) Used when creating the PostgreSQL Database.
+- `delete` - (Defaults to 60 minutes) Used when deleting the PostgreSQL Database.
+- `read` - (Defaults to 5 minutes) Used when retrieving the PostgreSQL Database.
+
+Type:
+
+```hcl
+map(object({
+    charset             = string
+    collation           = string
+    name                = string
+    resource_group_name = string
+    server_name         = string
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      read   = optional(string)
+    }))
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_delegated_subnet_id"></a> [delegated\_subnet\_id](#input\_delegated\_subnet\_id)
+
+Description: (Optional) The ID of the virtual network subnet to create the PostgreSQL Flexible Server. The provided subnet should not have any other resource deployed in it and this subnet will be delegated to the PostgreSQL Flexible Server, if not already delegated. Changing this forces a new PostgreSQL Flexible Server to be created.
+
+Type: `string`
 
 Default: `null`
 
@@ -146,6 +231,30 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_geo_redundant_backup_enabled"></a> [geo\_redundant\_backup\_enabled](#input\_geo\_redundant\_backup\_enabled)
+
+Description: (Optional) Is Geo-Redundant backup enabled on the PostgreSQL Flexible Server. Defaults to `false`. Changing this forces a new PostgreSQL Flexible Server to be created.
+
+Type: `bool`
+
+Default: `null`
+
+### <a name="input_high_availability"></a> [high\_availability](#input\_high\_availability)
+
+Description: - `mode` - (Required) The high availability mode for the PostgreSQL Flexible Server. Possible value are `SameZone` or `ZoneRedundant`.
+- `standby_availability_zone` - (Optional) Specifies the Availability Zone in which the standby Flexible Server should be located.
+
+Type:
+
+```hcl
+object({
+    mode                      = string
+    standby_availability_zone = optional(string)
+  })
+```
+
+Default: `null`
+
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
 Description: Controls the Resource Lock configuration for this resource. The following properties can be specified:
@@ -159,6 +268,24 @@ Type:
 object({
     kind = string
     name = optional(string, null)
+  })
+```
+
+Default: `null`
+
+### <a name="input_maintenance_window"></a> [maintenance\_window](#input\_maintenance\_window)
+
+Description: - `day_of_week` - (Optional) The day of week for maintenance window, where the week starts on a Sunday, i.e. Sunday = `0`, Monday = `1`. Defaults to `0`.
+- `start_hour` - (Optional) The start hour for maintenance window. Defaults to `0`.
+- `start_minute` - (Optional) The start minute for maintenance window. Defaults to `0`.
+
+Type:
+
+```hcl
+object({
+    day_of_week  = optional(number)
+    start_hour   = optional(number)
+    start_minute = optional(number)
   })
 ```
 
@@ -181,6 +308,22 @@ object({
 ```
 
 Default: `{}`
+
+### <a name="input_point_in_time_restore_time_in_utc"></a> [point\_in\_time\_restore\_time\_in\_utc](#input\_point\_in\_time\_restore\_time\_in\_utc)
+
+Description: (Optional) The point in time to restore from `source_server_id` when `create_mode` is `GeoRestore`, `PointInTimeRestore`. Changing this forces a new PostgreSQL Flexible Server to be created.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_private_dns_zone_id"></a> [private\_dns\_zone\_id](#input\_private\_dns\_zone\_id)
+
+Description: (Optional) The ID of the private DNS zone to create the PostgreSQL Flexible Server.
+
+Type: `string`
+
+Default: `null`
 
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
@@ -215,6 +358,7 @@ map(object({
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
+      principal_type                         = optional(string, null)
     })), {})
     lock = optional(object({
       kind = string
@@ -246,6 +390,22 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_public_network_access_enabled"></a> [public\_network\_access\_enabled](#input\_public\_network\_access\_enabled)
+
+Description: (Optional) Whether the server is publicly accessible.  Defaults to `false`.
+
+Type: `bool`
+
+Default: `false`
+
+### <a name="input_replication_role"></a> [replication\_role](#input\_replication\_role)
+
+Description: (Optional) The replication role for the PostgreSQL Flexible Server. Possible value is `None`.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
 Description: A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
@@ -270,10 +430,43 @@ map(object({
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
+    principal_type                         = optional(string, null)
   }))
 ```
 
 Default: `{}`
+
+### <a name="input_server_version"></a> [server\_version](#input\_server\_version)
+
+Description: (Optional) The version of PostgreSQL Flexible Server to use. Possible values are `11`,`12`, `13`, `14`, `15` and `16`. Required when `create_mode` is `Default`.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_sku_name"></a> [sku\_name](#input\_sku\_name)
+
+Description: (Optional) The SKU Name for the PostgreSQL Flexible Server. The name of the SKU, follows the `tier` + `name` pattern (e.g. `B_Standard_B1ms`, `GP_Standard_D2s_v3`, `MO_Standard_E4s_v3`).
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_source_server_id"></a> [source\_server\_id](#input\_source\_server\_id)
+
+Description: (Optional) The resource ID of the source PostgreSQL Flexible Server to be restored. Required when `create_mode` is `GeoRestore`, `PointInTimeRestore` or `Replica`. Changing this forces a new PostgreSQL Flexible Server to be created.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_storage_mb"></a> [storage\_mb](#input\_storage\_mb)
+
+Description: (Optional) The max storage allowed for the PostgreSQL Flexible Server. Possible values are `32768`, `65536`, `131072`, `262144`, `524288`, `1048576`, `2097152`, `4193280`, `4194304`, `8388608`, `16777216` and `33553408`.
+
+Type: `number`
+
+Default: `null`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
@@ -283,9 +476,41 @@ Type: `map(string)`
 
 Default: `null`
 
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: - `create` - (Defaults to 1 hour) Used when creating the PostgreSQL Flexible Server.
+- `delete` - (Defaults to 1 hour) Used when deleting the PostgreSQL Flexible Server.
+- `read` - (Defaults to 5 minutes) Used when retrieving the PostgreSQL Flexible Server.
+- `update` - (Defaults to 1 hour) Used when updating the PostgreSQL Flexible Server.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    delete = optional(string)
+    read   = optional(string)
+    update = optional(string)
+  })
+```
+
+Default: `null`
+
+### <a name="input_zone"></a> [zone](#input\_zone)
+
+Description: (Optional) Specifies the Availability Zone in which the PostgreSQL Flexible Server should be located.
+
+Type: `string`
+
+Default: `null`
+
 ## Outputs
 
 The following outputs are exported:
+
+### <a name="output_name"></a> [name](#output\_name)
+
+Description: The resource ID for the resource.
 
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
@@ -294,6 +519,10 @@ Description:   A map of the private endpoints created.
 ### <a name="output_resource"></a> [resource](#output\_resource)
 
 Description: This is the full output for the resource.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: The resource ID for the resource.
 
 ## Modules
 
