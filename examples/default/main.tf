@@ -65,5 +65,5 @@ module "test" {
   administrator_login    = "psqladmin"
   administrator_password = random_password.myadminpassword.result
   server_version         = 16
-  sku_name               = "B_Standard_B1ms"
+  sku_name               = "GP_Standard_D2s_v3"
 }
