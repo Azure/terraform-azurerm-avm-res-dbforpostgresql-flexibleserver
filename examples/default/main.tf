@@ -39,8 +39,14 @@ module "naming" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  location = module.regions.regions[random_integer.region_index.result].name
+  location = "australiaeast" #module.regions.regions[random_integer.region_index.result].name
   name     = module.naming.resource_group.name_unique
+}
+
+resource "random_password" "myadminpassword" {
+  length           = 16
+  override_special = "_%@"
+  special          = true
 }
 
 # This is the module call
@@ -49,11 +55,21 @@ resource "azurerm_resource_group" "this" {
 # with a data source.
 module "test" {
   source = "../../"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
-  # ...
-  location            = azurerm_resource_group.this.location
-  name                = "TODO" # TODO update with module.naming.<RESOURCE_TYPE>.name_unique
-  resource_group_name = azurerm_resource_group.this.name
+  # source  = "Azure/avm-res-dbforpostgresql-flexibleserver/azurerm"
+  # version = "0.1.0"
 
-  enable_telemetry = var.enable_telemetry # see variables.tf
+  location               = azurerm_resource_group.this.location
+  name                   = module.naming.postgresql_server.name_unique
+  resource_group_name    = azurerm_resource_group.this.name
+  enable_telemetry       = var.enable_telemetry
+  administrator_login    = "psqladmin"
+  administrator_password = random_password.myadminpassword.result
+  server_version         = 16
+  sku_name               = "GP_Standard_D2s_v3"
+  zone                   = 1
+  high_availability = {
+    mode                      = "ZoneRedundant"
+    standby_availability_zone = 2
+  }
+  tags = null
 }

@@ -1,3 +1,8 @@
+output "name" {
+  description = "The resource ID for the resource."
+  value       = azurerm_postgresql_flexible_server.this.name
+}
+
 output "private_endpoints" {
   description = <<DESCRIPTION
   A map of the private endpoints created.
@@ -9,5 +14,10 @@ output "private_endpoints" {
 # https://azure.github.io/Azure-Verified-Modules/specs/terraform/#id-tffr2---category-outputs---additional-terraform-outputs
 output "resource" {
   description = "This is the full output for the resource."
-  value       = azurerm_resource_group.TODO # TODO: Replace this dummy resource azurerm_resource_group.TODO with your module resource
+  value       = azurerm_postgresql_flexible_server.this
+}
+
+output "resource_id" {
+  description = "The resource ID for the resource."
+  value       = azurerm_postgresql_flexible_server.this.id
 }

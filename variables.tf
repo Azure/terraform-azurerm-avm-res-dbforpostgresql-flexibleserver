@@ -1,13 +1,12 @@
+variable "location" {
+  type        = string
+  description = "Azure region where the resource should be deployed."
+  nullable    = false
+}
+
 variable "name" {
   type        = string
   description = "The name of the this resource."
-
-  validation {
-    condition     = can(regex("TODO", var.name))
-    error_message = "The name must be TODO." # TODO remove the example below once complete:
-    #condition     = can(regex("^[a-z0-9]{5,50}$", var.name))
-    #error_message = "The name must be between 5 and 50 characters long and can only contain lowercase letters and numbers."
-  }
 }
 
 # This is required for most resource modules
@@ -16,9 +15,6 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
-# required AVM interfaces
-# remove only if not supported by the resource
-# tflint-ignore: terraform_unused_declarations
 variable "customer_managed_key" {
   type = object({
     key_vault_resource_id = string
@@ -94,12 +90,6 @@ If it is set to false, then no telemetry will be collected.
 DESCRIPTION
 }
 
-variable "location" {
-  type        = string
-  nullable    = false
-  description = "Azure region where the resource should be deployed."
-}
-
 variable "lock" {
   type = object({
     kind = string
@@ -119,7 +109,6 @@ DESCRIPTION
   }
 }
 
-# tflint-ignore: terraform_unused_declarations
 variable "managed_identities" {
   type = object({
     system_assigned            = optional(bool, false)
@@ -146,6 +135,7 @@ variable "private_endpoints" {
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
+      principal_type                         = optional(string, null)
     })), {})
     lock = optional(object({
       kind = string
@@ -195,8 +185,8 @@ DESCRIPTION
 variable "private_endpoints_manage_dns_zone_group" {
   type        = bool
   default     = true
-  nullable    = false
   description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
+  nullable    = false
 }
 
 variable "role_assignments" {
@@ -208,6 +198,7 @@ variable "role_assignments" {
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
+    principal_type                         = optional(string, null)
   }))
   default     = {}
   description = <<DESCRIPTION
@@ -225,8 +216,6 @@ DESCRIPTION
   nullable    = false
 }
 
-
-# tflint-ignore: terraform_unused_declarations
 variable "tags" {
   type        = map(string)
   default     = null
