@@ -60,7 +60,9 @@ variable "high_availability" {
     mode                      = string
     standby_availability_zone = optional(string)
   })
-  default     = null
+  default = {
+    mode = "ZoneRedundant"
+  }
   description = <<-EOT
  - `mode` - (Required) The high availability mode for the PostgreSQL Flexible Server. Possible value are `SameZone` or `ZoneRedundant`.
  - `standby_availability_zone` - (Optional) Specifies the Availability Zone in which the standby Flexible Server should be located.
@@ -69,11 +71,15 @@ EOT
 
 variable "maintenance_window" {
   type = object({
-    day_of_week  = optional(number)
+    day_of_week  = optional(string)
     start_hour   = optional(number)
     start_minute = optional(number)
   })
-  default     = null
+  default = {
+    day_of_week  = "0"
+    start_hour   = 0
+    start_minute = 0
+  }
   description = <<-EOT
  - `day_of_week` - (Optional) The day of week for maintenance window, where the week starts on a Sunday, i.e. Sunday = `0`, Monday = `1`. Defaults to `0`.
  - `start_hour` - (Optional) The start hour for maintenance window. Defaults to `0`.

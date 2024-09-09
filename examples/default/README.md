@@ -64,10 +64,10 @@ module "test" {
   # source  = "Azure/avm-res-dbforpostgresql-flexibleserver/azurerm"
   # version = "0.1.0"
 
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.postgresql_server.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-
+  location               = azurerm_resource_group.this.location
+  name                   = module.naming.postgresql_server.name_unique
+  resource_group_name    = azurerm_resource_group.this.name
+  enable_telemetry       = var.enable_telemetry
   administrator_login    = "psqladmin"
   administrator_password = random_password.myadminpassword.result
   server_version         = 16

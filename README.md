@@ -255,7 +255,13 @@ object({
   })
 ```
 
-Default: `null`
+Default:
+
+```json
+{
+  "mode": "ZoneRedundant"
+}
+```
 
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
@@ -285,13 +291,21 @@ Type:
 
 ```hcl
 object({
-    day_of_week  = optional(number)
+    day_of_week  = optional(string)
     start_hour   = optional(number)
     start_minute = optional(number)
   })
 ```
 
-Default: `null`
+Default:
+
+```json
+{
+  "day_of_week": "0",
+  "start_hour": 0,
+  "start_minute": 0
+}
+```
 
 ### <a name="input_managed_identities"></a> [managed\_identities](#input\_managed\_identities)
 
