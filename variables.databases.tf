@@ -8,7 +8,6 @@ variable "databases" {
       create = optional(string)
       delete = optional(string)
       read   = optional(string)
-      update = optional(string)
     }))
   }))
   default     = {}
