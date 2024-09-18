@@ -1,11 +1,10 @@
-resource "azurerm_postgresql_database" "this" {
+resource "azurerm_postgresql_flexible_server_database" "this" {
   for_each = var.databases
 
-  charset             = each.value.charset
-  collation           = each.value.collation
-  name                = each.value.name
-  resource_group_name = each.value.resource_group_name
-  server_name         = each.value.server_name
+  name      = each.value.name
+  server_id = azurerm_postgresql_flexible_server.this.id
+  charset   = each.value.charset
+  collation = each.value.collation
 
   dynamic "timeouts" {
     for_each = each.value.timeouts == null ? [] : [each.value.timeouts]
