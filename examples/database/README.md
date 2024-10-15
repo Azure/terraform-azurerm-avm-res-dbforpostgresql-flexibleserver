@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
-# Default example
+# Postgres with database example
 
-This deploys the module in its simplest form.
+This deploys the module with a database
 
 ```hcl
 terraform {
@@ -73,6 +73,15 @@ module "test" {
   server_version         = 16
   sku_name               = "GP_Standard_D2s_v3"
   zone                   = 1
+
+  databases = {
+    pgdb = {
+      charset   = "UTF8"
+      collation = "default"
+      name      = module.naming.postgresql_database.name_unique
+    }
+  }
+
   high_availability = {
     mode                      = "ZoneRedundant"
     standby_availability_zone = 2

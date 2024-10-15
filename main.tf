@@ -16,6 +16,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
   sku_name                          = var.sku_name
   source_server_id                  = var.source_server_id
   storage_mb                        = var.storage_mb
+  storage_tier                      = var.storage_tier
   tags                              = var.tags
   version                           = var.server_version
   zone                              = var.zone

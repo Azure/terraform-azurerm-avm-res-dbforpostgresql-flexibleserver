@@ -129,6 +129,16 @@ variable "storage_mb" {
   description = "(Optional) The max storage allowed for the PostgreSQL Flexible Server. Possible values are `32768`, `65536`, `131072`, `262144`, `524288`, `1048576`, `2097152`, `4193280`, `4194304`, `8388608`, `16777216` and `33553408`."
 }
 
+variable "storage_tier" {
+  type        = string
+  default     = null
+  description = "(Optional) The storage tier for the PostgreSQL Flexible Server. Possible values are `P4`, `P6`, `P10`, `P15`, `P20`, `P30`, `P40`, `P50`, `P60`, `P70` or `P80`."
+  validation {
+    condition     = var.storage_tier != null ? contains(["P4", "P6", "P10", "P15", "P20", "P30", "P40", "P50", "P60", "P70", "P80"], var.storage_tier) : true
+    error_message = "The storage_tier must be one of the following values: P4, P6, P10, P15, P20, P30, P40, P50, P60, P70, P80."
+  }
+}
+
 variable "timeouts" {
   type = object({
     create = optional(string)
