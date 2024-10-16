@@ -77,7 +77,7 @@ module "test" {
   databases = {
     pgdb = {
       charset   = "UTF8"
-      collation = "default"
+      collation = "en_US.utf8"
       name      = module.naming.postgresql_database.name_unique
     }
   }
