@@ -88,6 +88,10 @@ module "test" {
   }
   tags = null
 }
+
+output "database_resource_ids" {
+  value = module.test.database_resource_ids
+}
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -130,7 +134,11 @@ Default: `true`
 
 ## Outputs
 
-No outputs.
+The following outputs are exported:
+
+### <a name="output_database_resource_ids"></a> [database\_resource\_ids](#output\_database\_resource\_ids)
+
+Description: n/a
 
 ## Modules
 

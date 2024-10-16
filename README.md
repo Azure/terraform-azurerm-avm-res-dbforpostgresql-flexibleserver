@@ -529,6 +529,14 @@ Default: `null`
 
 The following outputs are exported:
 
+### <a name="output_database_resource_ids"></a> [database\_resource\_ids](#output\_database\_resource\_ids)
+
+Description: A map of database keys to resource ids.
+
+### <a name="output_fqdn"></a> [fqdn](#output\_fqdn)
+
+Description: The fully qualified domain name of the PostgreSQL Flexible Server.
+
 ### <a name="output_name"></a> [name](#output\_name)
 
 Description: The resource ID for the resource.
@@ -536,10 +544,6 @@ Description: The resource ID for the resource.
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
 Description:   A map of the private endpoints created.
-
-### <a name="output_resource"></a> [resource](#output\_resource)
-
-Description: This is the full output for the resource.
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
