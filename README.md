@@ -17,7 +17,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.71)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.105)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -29,8 +29,8 @@ The following resources are used by this module:
 
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
-- [azurerm_postgresql_database.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_database) (resource)
 - [azurerm_postgresql_flexible_server.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server) (resource)
+- [azurerm_postgresql_flexible_server_database.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_database) (resource)
 - [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint.this_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
@@ -151,11 +151,9 @@ Default: `null`
 
 ### <a name="input_databases"></a> [databases](#input\_databases)
 
-Description: - `charset` - (Required)  Specifies the Charset for the PostgreSQL Database, which needs [to be a valid PostgreSQL Charset](https://www.postgresql.org/docs/current/static/multibyte.html). Changing this forces a new resource to be created.
-- `collation` - (Required) Specifies the Collation for the PostgreSQL Database, which needs [to be a valid PostgreSQL Collation](https://www.postgresql.org/docs/current/static/collation.html). Note that Microsoft uses different [notation](https://msdn.microsoft.com/library/windows/desktop/dd373814.aspx)
-- `name` - (Required) Specifies the name of the PostgreSQL Database, which needs [to be a valid PostgreSQL identifier](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS). Changing this forces a new resource to be created.
-- `resource_group_name` - (Required) The name of the resource group in which the PostgreSQL Server exists. Changing this forces a new resource to be created.
-- `server_name` - (Required) Specifies the name of the PostgreSQL Server. Changing this forces a new resource to be created.
+Description: - `name` - (Required) Specifies the name of the PostgreSQL Database, which needs [to be a valid PostgreSQL identifier](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS). Changing this forces a new resource to be created.
+- `charset` - (Optional)  Specifies the Charset for the PostgreSQL Database, which needs [to be a valid PostgreSQL Charset](https://www.postgresql.org/docs/current/static/multibyte.html). Changing this forces a new resource to be created.
+- `collation` - (Optional) Specifies the Collation for the PostgreSQL Database, which needs [to be a valid PostgreSQL Collation](https://www.postgresql.org/docs/current/static/collation.html). Note that Microsoft uses different [notation](https://msdn.microsoft.com/library/windows/desktop/dd373814.aspx)
 
 ---
 `timeouts` block supports the following:
@@ -167,11 +165,9 @@ Type:
 
 ```hcl
 map(object({
-    charset             = string
-    collation           = string
-    name                = string
-    resource_group_name = string
-    server_name         = string
+    name      = string
+    charset   = optional(string)
+    collation = optional(string)
     timeouts = optional(object({
       create = optional(string)
       delete = optional(string)
@@ -485,6 +481,14 @@ Type: `number`
 
 Default: `null`
 
+### <a name="input_storage_tier"></a> [storage\_tier](#input\_storage\_tier)
+
+Description: (Optional) The storage tier for the PostgreSQL Flexible Server. Possible values are `P4`, `P6`, `P10`, `P15`, `P20`, `P30`, `P40`, `P50`, `P60`, `P70` or `P80`.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
 Description: (Optional) Tags of the resource.
@@ -525,6 +529,14 @@ Default: `null`
 
 The following outputs are exported:
 
+### <a name="output_database_resource_ids"></a> [database\_resource\_ids](#output\_database\_resource\_ids)
+
+Description: A map of database keys to resource ids.
+
+### <a name="output_fqdn"></a> [fqdn](#output\_fqdn)
+
+Description: The fully qualified domain name of the PostgreSQL Flexible Server.
+
 ### <a name="output_name"></a> [name](#output\_name)
 
 Description: The resource ID for the resource.
@@ -532,10 +544,6 @@ Description: The resource ID for the resource.
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
 Description:   A map of the private endpoints created.
-
-### <a name="output_resource"></a> [resource](#output\_resource)
-
-Description: This is the full output for the resource.
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
