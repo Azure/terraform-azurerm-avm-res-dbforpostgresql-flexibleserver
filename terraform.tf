@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.71"
+      version = "~> 3.105" # first version with support for public_network_access_enabled
     }
     modtm = {
       source  = "Azure/modtm"
