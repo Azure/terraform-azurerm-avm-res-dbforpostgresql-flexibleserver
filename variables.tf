@@ -17,21 +17,24 @@ variable "resource_group_name" {
 
 variable "customer_managed_key" {
   type = object({
-    key_vault_resource_id = string
-    key_name              = string
-    key_version           = optional(string, null)
-    user_assigned_identity = optional(object({
+    key_vault_key_id = string
+    geo_backup_key_vault_key_id = string
+    geo_backup_user_assigned_identity_id = optional(object({
       resource_id = string
     }), null)
+    primary_user_assigned_identity = optional(object({
+      resource_id = string
+    }), null)
+    #key_name              = string
+    #key_version           = optional(string, null)
   })
   default     = null
   description = <<DESCRIPTION
 A map describing customer-managed keys to associate with the resource. This includes the following properties:
-- `key_vault_resource_id` - The resource ID of the Key Vault where the key is stored.
-- `key_name` - The name of the key.
-- `key_version` - (Optional) The version of the key. If not specified, the latest version is used.
-- `user_assigned_identity` - (Optional) An object representing a user-assigned identity with the following properties:
-  - `resource_id` - The resource ID of the user-assigned identity.
+- `key_vault_key_id` - (Required) The ID of the Key Vault Key..
+- `geo_backup_key_vault_key_id` - (Optional) The ID of the geo backup Key Vault Key
+- `geo_backup_user_assigned_identity_id` - (Optional) The geo backup user managed identity id for a Customer Managed Key. Should be added with identity_ids
+- `primary_user_assigned_identity` - (Optional) Specifies the primary user managed identity id for a Customer Managed Key. Should be added with identity_ids
 DESCRIPTION  
 }
 
