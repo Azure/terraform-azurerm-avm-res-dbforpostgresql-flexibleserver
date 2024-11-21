@@ -1,3 +1,11 @@
+output "database_name" {
+  description = "A map of database keys to database name."
+  sensitive   = true
+  value = { for dk, dv in azurerm_postgresql_flexible_server_database.this : dk => {
+    name = dv.name
+  } if azurerm_postgresql_flexible_server_database.this != null }
+}
+
 output "database_resource_ids" {
   description = "A map of database keys to resource ids."
   value = { for dk, dv in azurerm_postgresql_flexible_server_database.this : dk => {

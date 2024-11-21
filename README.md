@@ -31,6 +31,7 @@ The following resources are used by this module:
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_postgresql_flexible_server.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server) (resource)
 - [azurerm_postgresql_flexible_server_database.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_database) (resource)
+- [azurerm_postgresql_flexible_server_firewall_rule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_firewall_rule) (resource)
 - [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint.this_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
@@ -229,6 +230,34 @@ If it is set to false, then no telemetry will be collected.
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_firewall_rules"></a> [firewall\_rules](#input\_firewall\_rules)
+
+Description: - `name` - (Optional) The name which should be used for this PostgreSQL Flexible Server Firewall Rule.  
+- `start_ip_address` - (Optional) The Start IP Address associated with this PostgreSQL Flexible Server Firewall Rule.  
+- `end_ip_address` - (Optional) The End IP Address associated with this PostgreSQL Flexible Server Firewall Rule.   
+
+Type:
+
+```hcl
+map(object({
+    name             = string
+    end_ip_address   = string
+    start_ip_address = string
+  }))
+```
+
+Default:
+
+```json
+{
+  "rule1": {
+    "end_ip_address": "255.255.255.255",
+    "name": "AllowAllFireWallRule",
+    "start_ip_address": "0.0.0.0"
+  }
+}
+```
 
 ### <a name="input_geo_redundant_backup_enabled"></a> [geo\_redundant\_backup\_enabled](#input\_geo\_redundant\_backup\_enabled)
 
@@ -528,6 +557,10 @@ Default: `null`
 ## Outputs
 
 The following outputs are exported:
+
+### <a name="output_database_name"></a> [database\_name](#output\_database\_name)
+
+Description: A map of database keys to database name.
 
 ### <a name="output_database_resource_ids"></a> [database\_resource\_ids](#output\_database\_resource\_ids)
 
