@@ -15,9 +15,5 @@ resource "azurerm_postgresql_flexible_server_database" "this" {
       read   = timeouts.value.read
     }
   }
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
