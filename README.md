@@ -163,16 +163,10 @@ Type:
 
 ```hcl
 object({
-    key_vault_key_id            = string
-    geo_backup_key_vault_key_id = string
-    geo_backup_user_assigned_identity_id = optional(object({
-      resource_id = string
-    }), null)
-    primary_user_assigned_identity = optional(object({
-      resource_id = string
-    }), null)
-    #key_name              = string
-    #key_version           = optional(string, null)
+    key_vault_key_id                     = string
+    geo_backup_key_vault_key_id          = optional(string)
+    geo_backup_user_assigned_identity_id = optional(string)
+    primary_user_assigned_identity_id    = optional(string)
   })
 ```
 
