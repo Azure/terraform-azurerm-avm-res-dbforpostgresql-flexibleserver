@@ -1,9 +1,9 @@
 terraform {
-  required_version = "~> 1.5"
+  required_version = "~> 1.10"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.105" # first version with support for public_network_access_enabled
+      version = "~> 4.12"
     }
     modtm = {
       source  = "Azure/modtm"
@@ -11,7 +11,7 @@ terraform {
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.5"
+      version = "~> 3.6"
     }
   }
 }

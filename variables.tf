@@ -15,23 +15,46 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
+variable "ad_administrator" {
+  type = map(object({
+    tenant_id      = string
+    object_id      = string
+    principal_name = string
+    principal_type = string
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+A map to allow you to set a user or group as the AD administrator for a PostgreSQL Flexible Server.
+
+- `tenant_id` - The Azure Tenant ID. Changing this forces a new resource to be created.
+- `object_id` - The object ID of a user, service principal or security group in the Azure Active Directory tenant set as the Flexible Server Admin. Changing this forces a new resource to be created.
+- `principal_name` - The name of Azure Active Directory principal. Changing this forces a new resource to be created.
+- `principal_type` - The type of Azure Active Directory principal. Possible values are Group, ServicePrincipal and User. Changing this forces a new resource to be created.
+
+DESCRIPTION
+  nullable    = false
+}
+
 variable "customer_managed_key" {
   type = object({
-    key_vault_resource_id = string
-    key_name              = string
-    key_version           = optional(string, null)
-    user_assigned_identity = optional(object({
+    key_vault_key_id            = string
+    geo_backup_key_vault_key_id = string
+    geo_backup_user_assigned_identity_id = optional(object({
       resource_id = string
     }), null)
+    primary_user_assigned_identity = optional(object({
+      resource_id = string
+    }), null)
+    #key_name              = string
+    #key_version           = optional(string, null)
   })
   default     = null
   description = <<DESCRIPTION
 A map describing customer-managed keys to associate with the resource. This includes the following properties:
-- `key_vault_resource_id` - The resource ID of the Key Vault where the key is stored.
-- `key_name` - The name of the key.
-- `key_version` - (Optional) The version of the key. If not specified, the latest version is used.
-- `user_assigned_identity` - (Optional) An object representing a user-assigned identity with the following properties:
-  - `resource_id` - The resource ID of the user-assigned identity.
+- `key_vault_key_id` - (Required) The ID of the Key Vault Key..
+- `geo_backup_key_vault_key_id` - (Optional) The ID of the geo backup Key Vault Key
+- `geo_backup_user_assigned_identity_id` - (Optional) The geo backup user managed identity id for a Customer Managed Key. Should be added with identity_ids
+- `primary_user_assigned_identity` - (Optional) Specifies the primary user managed identity id for a Customer Managed Key. Should be added with identity_ids
 DESCRIPTION  
 }
 
@@ -216,8 +239,42 @@ DESCRIPTION
   nullable    = false
 }
 
+variable "server_configuration" {
+  type = map(object({
+    name   = string
+    config = string
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+A map to set a PostgreSQL Configuration value on a Azure PostgreSQL Flexible Server.
+
+- `name` - Specifies the name of the PostgreSQL Configuration, which needs to be a valid PostgreSQL configuration name. Changing this forces a new resource to be created.
+- `config` - Specifies the value of the PostgreSQL Configuration. See the PostgreSQL documentation for valid values.
+
+DESCRIPTION
+  nullable    = false
+}
+
 variable "tags" {
   type        = map(string)
   default     = null
   description = "(Optional) Tags of the resource."
+}
+
+variable "virtual_endpoint" {
+  type = map(object({
+    name              = string
+    replica_server_id = string
+    type              = string
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+A map to allow you to create a Virtual Endpoint associated with a Postgres Flexible Replica.
+
+- `name` - (Required) The name of the Virtual Endpoint.
+- `replica_server_id` - (Required) The Resource ID of the Replica Postgres Flexible Server this should be associated with.
+- `type` - (Required) The type of Virtual Endpoint. Currently only ReadWrite is supported.
+
+DESCRIPTION
+  nullable    = false
 }

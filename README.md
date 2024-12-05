@@ -15,13 +15,13 @@ This is a Terraform module for PostgreSQL Flexible Server in the style of Azure 
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.10)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.105)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.12)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
 ## Resources
 
@@ -30,8 +30,11 @@ The following resources are used by this module:
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_postgresql_flexible_server.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server) (resource)
+- [azurerm_postgresql_flexible_server_active_directory_administrator.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_active_directory_administrator) (resource)
+- [azurerm_postgresql_flexible_server_configuration.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_configuration) (resource)
 - [azurerm_postgresql_flexible_server_database.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_database) (resource)
 - [azurerm_postgresql_flexible_server_firewall_rule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_firewall_rule) (resource)
+- [azurerm_postgresql_flexible_server_virtual_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_virtual_endpoint) (resource)
 - [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint.this_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
@@ -67,6 +70,28 @@ Type: `string`
 ## Optional Inputs
 
 The following input variables are optional (have default values):
+
+### <a name="input_ad_administrator"></a> [ad\_administrator](#input\_ad\_administrator)
+
+Description: A map to allow you to set a user or group as the AD administrator for a PostgreSQL Flexible Server.
+
+- `tenant_id` - The Azure Tenant ID. Changing this forces a new resource to be created.
+- `object_id` - The object ID of a user, service principal or security group in the Azure Active Directory tenant set as the Flexible Server Admin. Changing this forces a new resource to be created.
+- `principal_name` - The name of Azure Active Directory principal. Changing this forces a new resource to be created.
+- `principal_type` - The type of Azure Active Directory principal. Possible values are Group, ServicePrincipal and User. Changing this forces a new resource to be created.
+
+Type:
+
+```hcl
+map(object({
+    tenant_id      = string
+    object_id      = string
+    principal_name = string
+    principal_type = string
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_administrator_login"></a> [administrator\_login](#input\_administrator\_login)
 
@@ -129,22 +154,25 @@ Default: `null`
 ### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
 
 Description: A map describing customer-managed keys to associate with the resource. This includes the following properties:
-- `key_vault_resource_id` - The resource ID of the Key Vault where the key is stored.
-- `key_name` - The name of the key.
-- `key_version` - (Optional) The version of the key. If not specified, the latest version is used.
-- `user_assigned_identity` - (Optional) An object representing a user-assigned identity with the following properties:
-  - `resource_id` - The resource ID of the user-assigned identity.
+- `key_vault_key_id` - (Required) The ID of the Key Vault Key..
+- `geo_backup_key_vault_key_id` - (Optional) The ID of the geo backup Key Vault Key
+- `geo_backup_user_assigned_identity_id` - (Optional) The geo backup user managed identity id for a Customer Managed Key. Should be added with identity\_ids
+- `primary_user_assigned_identity` - (Optional) Specifies the primary user managed identity id for a Customer Managed Key. Should be added with identity\_ids
 
 Type:
 
 ```hcl
 object({
-    key_vault_resource_id = string
-    key_name              = string
-    key_version           = optional(string, null)
-    user_assigned_identity = optional(object({
+    key_vault_key_id            = string
+    geo_backup_key_vault_key_id = string
+    geo_backup_user_assigned_identity_id = optional(object({
       resource_id = string
     }), null)
+    primary_user_assigned_identity = optional(object({
+      resource_id = string
+    }), null)
+    #key_name              = string
+    #key_version           = optional(string, null)
   })
 ```
 
@@ -478,6 +506,24 @@ map(object({
 
 Default: `{}`
 
+### <a name="input_server_configuration"></a> [server\_configuration](#input\_server\_configuration)
+
+Description: A map to set a PostgreSQL Configuration value on a Azure PostgreSQL Flexible Server.
+
+- `name` - Specifies the name of the PostgreSQL Configuration, which needs to be a valid PostgreSQL configuration name. Changing this forces a new resource to be created.
+- `config` - Specifies the value of the PostgreSQL Configuration. See the PostgreSQL documentation for valid values.
+
+Type:
+
+```hcl
+map(object({
+    name   = string
+    config = string
+  }))
+```
+
+Default: `{}`
+
 ### <a name="input_server_version"></a> [server\_version](#input\_server\_version)
 
 Description: (Optional) The version of PostgreSQL Flexible Server to use. Possible values are `11`,`12`, `13`, `14`, `15` and `16`. Required when `create_mode` is `Default`.
@@ -545,6 +591,26 @@ object({
 ```
 
 Default: `null`
+
+### <a name="input_virtual_endpoint"></a> [virtual\_endpoint](#input\_virtual\_endpoint)
+
+Description: A map to allow you to create a Virtual Endpoint associated with a Postgres Flexible Replica.
+
+- `name` - (Required) The name of the Virtual Endpoint.
+- `replica_server_id` - (Required) The Resource ID of the Replica Postgres Flexible Server this should be associated with.
+- `type` - (Required) The type of Virtual Endpoint. Currently only ReadWrite is supported.
+
+Type:
+
+```hcl
+map(object({
+    name              = string
+    replica_server_id = string
+    type              = string
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_zone"></a> [zone](#input\_zone)
 

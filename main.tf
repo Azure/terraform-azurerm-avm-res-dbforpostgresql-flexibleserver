@@ -134,3 +134,31 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
     }
   }
 }
+
+resource "azurerm_postgresql_flexible_server_active_directory_administrator" "this" {
+  for_each = var.ad_administrator
+
+  object_id           = each.value.data.object_id
+  principal_name      = each.value.data.principal_name
+  principal_type      = each.value.data.principal_type
+  resource_group_name = azurerm_postgresql_flexible_server.this.resource_group_name
+  server_name         = azurerm_postgresql_flexible_server.this.name
+  tenant_id           = each.value.data.tenant_id
+}
+
+resource "azurerm_postgresql_flexible_server_configuration" "this" {
+  for_each = var.server_configuration
+
+  name      = each.value.name
+  server_id = azurerm_postgresql_flexible_server.this.id
+  value     = each.value.config
+}
+
+resource "azurerm_postgresql_flexible_server_virtual_endpoint" "this" {
+  for_each = var.virtual_endpoint
+
+  name              = each.value.name
+  replica_server_id = each.value.replica_server_id
+  source_server_id  = azurerm_postgresql_flexible_server.this.id
+  type              = each.value.type
+}
