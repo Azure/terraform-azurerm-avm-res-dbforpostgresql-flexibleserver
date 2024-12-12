@@ -138,12 +138,12 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
 resource "azurerm_postgresql_flexible_server_active_directory_administrator" "this" {
   for_each = var.ad_administrator
 
-  object_id           = each.value.data.object_id
-  principal_name      = each.value.data.principal_name
-  principal_type      = each.value.data.principal_type
+  object_id           = each.value.object_id
+  principal_name      = each.value.principal_name
+  principal_type      = each.value.principal_type
   resource_group_name = azurerm_postgresql_flexible_server.this.resource_group_name
   server_name         = azurerm_postgresql_flexible_server.this.name
-  tenant_id           = each.value.data.tenant_id
+  tenant_id           = each.value.tenant_id
 }
 
 resource "azurerm_postgresql_flexible_server_configuration" "this" {
