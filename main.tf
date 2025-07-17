@@ -52,8 +52,8 @@ resource "azurerm_postgresql_flexible_server" "this" {
     for_each = local.managed_identities.system_assigned_user_assigned
 
     content {
-      identity_ids = identity.value.user_assigned_resource_ids
       type         = identity.value.type
+      identity_ids = identity.value.user_assigned_resource_ids
     }
   }
   dynamic "maintenance_window" {
