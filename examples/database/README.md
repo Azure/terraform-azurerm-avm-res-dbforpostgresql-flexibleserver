@@ -6,6 +6,7 @@ This deploys the module with a database
 ```hcl
 terraform {
   required_version = "~> 1.9"
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -61,19 +62,12 @@ resource "random_password" "myadminpassword" {
 # with a data source.
 module "test" {
   source = "../../"
-  # source  = "Azure/avm-res-dbforpostgresql-flexibleserver/azurerm"
-  # version = "0.1.0"
 
   location               = azurerm_resource_group.this.location
   name                   = module.naming.postgresql_server.name_unique
   resource_group_name    = azurerm_resource_group.this.name
-  enable_telemetry       = var.enable_telemetry
   administrator_login    = "psqladmin"
   administrator_password = random_password.myadminpassword.result
-  server_version         = 16
-  sku_name               = "GP_Standard_D2s_v3"
-  zone                   = 1
-
   databases = {
     pgdb = {
       charset   = "UTF8"
@@ -81,17 +75,17 @@ module "test" {
       name      = module.naming.postgresql_database.name_unique
     }
   }
-
+  enable_telemetry = var.enable_telemetry
   high_availability = {
     mode                      = "ZoneRedundant"
     standby_availability_zone = 2
   }
-  tags = null
+  server_version = 16
+  sku_name       = "GP_Standard_D2s_v3"
+  tags           = null
+  zone           = 1
 }
 
-output "database_resource_ids" {
-  value = module.test.database_resource_ids
-}
 ```
 
 <!-- markdownlint-disable MD033 -->
