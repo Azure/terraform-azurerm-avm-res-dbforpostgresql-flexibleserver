@@ -15,7 +15,7 @@ variable "administrator_password_wo" {
   type        = string
   default     = null
   ephemeral   = true
-  description = "(Optional) The write-only administrator password for the PostgreSQL Flexible Server. Use this if you want to provide a password that is not readable after creation."
+  description = "(Optional) The Password associated with the administrator_login for the PostgreSQL Flexible Server. This can be used to avoid storing the password in state."
   sensitive   = true
 }
 
