@@ -22,7 +22,7 @@ variable "administrator_password_wo" {
 variable "administrator_password_wo_version" {
   type        = string
   default     = null
-  description = "(Optional) The version of the write-only administrator password secret (if using Key Vault or similar)."
+  description = "(Optional) An integer value used to trigger an update for `administrator_password_wo`. This property should be incremented when updating `administrator_password_wo`."
 }
 
 variable "authentication" {
