@@ -112,6 +112,22 @@ Type: `string`
 
 Default: `null`
 
+### <a name="input_administrator_password_wo"></a> [administrator\_password\_wo](#input\_administrator\_password\_wo)
+
+Description: (Optional) The Password associated with the administrator\_login for the PostgreSQL Flexible Server. This can be used to avoid storing the password in state.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_administrator_password_wo_version"></a> [administrator\_password\_wo\_version](#input\_administrator\_password\_wo\_version)
+
+Description: (Optional) An integer value used to trigger an update for `administrator_password_wo`. This property should be incremented when updating `administrator_password_wo`.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_authentication"></a> [authentication](#input\_authentication)
 
 Description: - `active_directory_auth_enabled` - (Optional)  Whether or not Active Directory authentication is allowed to access the PostgreSQL Flexible Server. Defaults to `false`.
