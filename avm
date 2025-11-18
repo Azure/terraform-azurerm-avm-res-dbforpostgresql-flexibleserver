@@ -110,6 +110,7 @@ if [ -z "${AVM_IN_CONTAINER}" ]; then
     -e NO_COLOR \
     -e PORCH_LOG_LEVEL \
     -e TF_IN_AUTOMATION=1 \
+    -e TFENV_TERRAFORM_VERSION \
     --env-file <(env | grep '^TF_VAR_') \
     --env-file <(env | grep '^AVM_') \
     "${CONTAINER_IMAGE}" \
