@@ -143,13 +143,13 @@ The following Modules are called:
 
 Source: Azure/naming/azurerm
 
-Version: ~> 0.4
+Version: 0.4.2
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
 Source: Azure/regions/azurerm
 
-Version: ~> 0.8
+Version: 0.8.2
 
 ### <a name="module_test"></a> [test](#module\_test)
 
