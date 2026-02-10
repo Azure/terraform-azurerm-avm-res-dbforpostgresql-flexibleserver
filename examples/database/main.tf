@@ -69,15 +69,15 @@ module "test" {
       name      = module.naming.postgresql_database.name_unique
     }
   }
-  enable_telemetry = var.enable_telemetry
+  enable_telemetry             = var.enable_telemetry
+  geo_redundant_backup_enabled = true
   high_availability = {
     mode                      = "ZoneRedundant"
     standby_availability_zone = 2
   }
-  geo_redundant_backup_enabled = true
-  server_version               = 16
-  sku_name                     = "GP_Standard_D2s_v3"
-  tags                         = null
-  zone                         = 1
+  server_version = 16
+  sku_name       = "GP_Standard_D2s_v3"
+  tags           = null
+  zone           = 1
 }
 
