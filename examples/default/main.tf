@@ -67,8 +67,9 @@ module "test" {
     mode                      = "ZoneRedundant"
     standby_availability_zone = 2
   }
-  server_version = 16
-  sku_name       = "GP_Standard_D2s_v3"
-  tags           = null
-  zone           = 1
+  geo_redundant_backup_enabled = true
+  server_version               = 16
+  sku_name                     = "GP_Standard_D2s_v3"
+  tags                         = null
+  zone                         = 1
 }
