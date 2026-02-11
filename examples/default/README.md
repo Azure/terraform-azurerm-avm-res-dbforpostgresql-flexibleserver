@@ -64,12 +64,13 @@ resource "random_password" "myadminpassword" {
 module "test" {
   source = "../../"
 
-  location               = azurerm_resource_group.this.location
-  name                   = module.naming.postgresql_server.name_unique
-  resource_group_name    = azurerm_resource_group.this.name
-  administrator_login    = "psqladmin"
-  administrator_password = random_password.myadminpassword.result
-  enable_telemetry       = var.enable_telemetry
+  location                     = azurerm_resource_group.this.location
+  name                         = module.naming.postgresql_server.name_unique
+  resource_group_name          = azurerm_resource_group.this.name
+  administrator_login          = "psqladmin"
+  administrator_password       = random_password.myadminpassword.result
+  enable_telemetry             = var.enable_telemetry
+  geo_redundant_backup_enabled = true
   high_availability = {
     mode                      = "ZoneRedundant"
     standby_availability_zone = 2
