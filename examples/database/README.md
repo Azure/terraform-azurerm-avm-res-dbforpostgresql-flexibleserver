@@ -29,7 +29,7 @@ provider "azurerm" {
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = "~> 0.8"
+  version = "0.8.2"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -42,7 +42,7 @@ resource "random_integer" "region_index" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4"
+  version = "0.4.2"
 }
 
 # This is required for resource modules
@@ -76,7 +76,8 @@ module "test" {
       name      = module.naming.postgresql_database.name_unique
     }
   }
-  enable_telemetry = var.enable_telemetry
+  enable_telemetry             = var.enable_telemetry
+  geo_redundant_backup_enabled = true
   high_availability = {
     mode                      = "ZoneRedundant"
     standby_availability_zone = 2
@@ -143,13 +144,13 @@ The following Modules are called:
 
 Source: Azure/naming/azurerm
 
-Version: ~> 0.4
+Version: 0.4.2
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
 Source: Azure/regions/azurerm
 
-Version: ~> 0.8
+Version: 0.8.2
 
 ### <a name="module_test"></a> [test](#module\_test)
 

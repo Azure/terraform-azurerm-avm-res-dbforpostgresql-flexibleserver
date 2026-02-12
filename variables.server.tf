@@ -11,6 +11,20 @@ variable "administrator_password" {
   sensitive   = true
 }
 
+variable "administrator_password_wo" {
+  type        = string
+  ephemeral   = true
+  default     = null
+  description = "(Optional) The Password associated with the administrator_login for the PostgreSQL Flexible Server. This can be used to avoid storing the password in state."
+  sensitive   = true
+}
+
+variable "administrator_password_wo_version" {
+  type        = string
+  default     = null
+  description = "(Optional) An integer value used to trigger an update for `administrator_password_wo`. This property should be incremented when updating `administrator_password_wo`."
+}
+
 variable "authentication" {
   type = object({
     active_directory_auth_enabled = optional(bool)
