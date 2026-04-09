@@ -79,7 +79,7 @@ variable "high_availability" {
   }
   description = <<-EOT
  - `mode` - (Required) The high availability mode for the PostgreSQL Flexible Server. Possible value are `SameZone` or `ZoneRedundant`.
- - `standby_availability_zone` - (Optional) Specifies the Availability Zone in which the standby Flexible Server should be located.
+ - `standby_availability_zone` - (Optional) Specifies the Availability Zone in which the standby Flexible Server should be located. Drift on this field is ignored after deployment to accommodate Azure-assigned values and failover events.
 EOT
 }
 
@@ -179,5 +179,5 @@ EOT
 variable "zone" {
   type        = string
   default     = null
-  description = "(Optional) Specifies the Availability Zone in which the PostgreSQL Flexible Server should be located."
+  description = "(Optional) Specifies the Availability Zone in which the PostgreSQL Flexible Server should be located. Drift on this field is ignored after deployment to accommodate Azure-assigned values and failover events."
 }

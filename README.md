@@ -311,7 +311,7 @@ Default: `null`
 ### <a name="input_high_availability"></a> [high\_availability](#input\_high\_availability)
 
 Description: - `mode` - (Required) The high availability mode for the PostgreSQL Flexible Server. Possible value are `SameZone` or `ZoneRedundant`.
-- `standby_availability_zone` - (Optional) Specifies the Availability Zone in which the standby Flexible Server should be located.
+- `standby_availability_zone` - (Optional) Specifies the Availability Zone in which the standby Flexible Server should be located. Drift on this field is ignored after deployment to accommodate Azure-assigned values and failover events.
 
 Type:
 
@@ -627,7 +627,7 @@ Default: `{}`
 
 ### <a name="input_zone"></a> [zone](#input\_zone)
 
-Description: (Optional) Specifies the Availability Zone in which the PostgreSQL Flexible Server should be located.
+Description: (Optional) Specifies the Availability Zone in which the PostgreSQL Flexible Server should be located. Drift on this field is ignored after deployment to accommodate Azure-assigned values and failover events.
 
 Type: `string`
 
