@@ -11,6 +11,20 @@ variable "administrator_password" {
   sensitive   = true
 }
 
+variable "administrator_password_wo" {
+  type        = string
+  ephemeral   = true
+  default     = null
+  description = "(Optional) The Password associated with the administrator_login for the PostgreSQL Flexible Server. This can be used to avoid storing the password in state."
+  sensitive   = true
+}
+
+variable "administrator_password_wo_version" {
+  type        = string
+  default     = null
+  description = "(Optional) An integer value used to trigger an update for `administrator_password_wo`. This property should be incremented when updating `administrator_password_wo`."
+}
+
 variable "authentication" {
   type = object({
     active_directory_auth_enabled = optional(bool)
@@ -111,6 +125,12 @@ variable "replication_role" {
   description = "(Optional) The replication role for the PostgreSQL Flexible Server. Possible value is `None`."
 }
 
+variable "server_version" {
+  type        = string
+  default     = null
+  description = "(Optional) The version of PostgreSQL Flexible Server to use. Possible values are `11`,`12`, `13`, `14`, `15` and `16`. Required when `create_mode` is `Default`."
+}
+
 variable "sku_name" {
   type        = string
   default     = null
@@ -133,6 +153,7 @@ variable "storage_tier" {
   type        = string
   default     = null
   description = "(Optional) The storage tier for the PostgreSQL Flexible Server. Possible values are `P4`, `P6`, `P10`, `P15`, `P20`, `P30`, `P40`, `P50`, `P60`, `P70` or `P80`."
+
   validation {
     condition     = var.storage_tier != null ? contains(["P4", "P6", "P10", "P15", "P20", "P30", "P40", "P50", "P60", "P70", "P80"], var.storage_tier) : true
     error_message = "The storage_tier must be one of the following values: P4, P6, P10, P15, P20, P30, P40, P50, P60, P70, P80."
@@ -153,12 +174,6 @@ variable "timeouts" {
  - `read` - (Defaults to 5 minutes) Used when retrieving the PostgreSQL Flexible Server.
  - `update` - (Defaults to 1 hour) Used when updating the PostgreSQL Flexible Server.
 EOT
-}
-
-variable "server_version" {
-  type        = string
-  default     = null
-  description = "(Optional) The version of PostgreSQL Flexible Server to use. Possible values are `11`,`12`, `13`, `14`, `15` and `16`. Required when `create_mode` is `Default`."
 }
 
 variable "zone" {

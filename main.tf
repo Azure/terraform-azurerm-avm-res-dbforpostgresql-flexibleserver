@@ -4,6 +4,8 @@ resource "azurerm_postgresql_flexible_server" "this" {
   resource_group_name               = var.resource_group_name
   administrator_login               = var.administrator_login
   administrator_password            = var.administrator_password
+  administrator_password_wo         = var.administrator_password_wo
+  administrator_password_wo_version = var.administrator_password_wo_version
   auto_grow_enabled                 = var.auto_grow_enabled
   backup_retention_days             = var.backup_retention_days
   create_mode                       = var.create_mode
@@ -52,8 +54,8 @@ resource "azurerm_postgresql_flexible_server" "this" {
     for_each = local.managed_identities.system_assigned_user_assigned
 
     content {
-      identity_ids = identity.value.user_assigned_resource_ids
       type         = identity.value.type
+      identity_ids = identity.value.user_assigned_resource_ids
     }
   }
   dynamic "maintenance_window" {
