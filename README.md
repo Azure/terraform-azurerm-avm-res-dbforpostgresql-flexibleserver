@@ -316,6 +316,8 @@ Default: `null`
 Description: - `mode` - (Required) The high availability mode for the PostgreSQL Flexible Server. Possible value are `SameZone` or `ZoneRedundant`.
 - `standby_availability_zone` - (Optional) Specifies the Availability Zone in which the standby Flexible Server should be located. Drift on this field is ignored after deployment to accommodate Azure-assigned values and failover events.
 
+> Note: High availability is not supported for Burstable SKUs (those with the `B_` prefix, e.g. `B_Standard_B1ms`). Set this variable to `null` when using a Burstable SKU.
+
 Type:
 
 ```hcl
@@ -550,7 +552,7 @@ Default: `null`
 
 ### <a name="input_sku_name"></a> [sku\_name](#input\_sku\_name)
 
-Description: (Optional) The SKU Name for the PostgreSQL Flexible Server. The name of the SKU, follows the `tier` + `name` pattern (e.g. `B_Standard_B1ms`, `GP_Standard_D2s_v3`, `MO_Standard_E4s_v3`).
+Description: (Optional) The SKU Name for the PostgreSQL Flexible Server. The name of the SKU, follows the `tier` + `name` pattern (e.g. `B_Standard_B1ms`, `GP_Standard_D2s_v3`, `MO_Standard_E4s_v3`). Note: High availability is not supported for Burstable SKUs (those with the `B_` prefix). When using a Burstable SKU, set `high_availability` to `null`.
 
 Type: `string`
 
