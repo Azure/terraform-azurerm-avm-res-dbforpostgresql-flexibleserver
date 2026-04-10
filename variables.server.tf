@@ -74,14 +74,12 @@ variable "high_availability" {
     mode                      = string
     standby_availability_zone = optional(string)
   })
-  default = {
-    mode = "ZoneRedundant"
-  }
+  default     = null
   description = <<-EOT
  - `mode` - (Required) The high availability mode for the PostgreSQL Flexible Server. Possible value are `SameZone` or `ZoneRedundant`.
  - `standby_availability_zone` - (Optional) Specifies the Availability Zone in which the standby Flexible Server should be located. Drift on this field is ignored after deployment to accommodate Azure-assigned values and failover events.
 
- > Note: High availability is not supported for Burstable SKUs (those with the `B_` prefix, e.g. `B_Standard_B1ms`). Set this variable to `null` when using a Burstable SKU.
+ > Note: High availability is not supported for all regions and SKUs. Burstable SKUs (those with the `B_` prefix, e.g. `B_Standard_B1ms`) do not support high availability. Leave this variable as `null` (the default) to deploy without high availability.
 EOT
 }
 
