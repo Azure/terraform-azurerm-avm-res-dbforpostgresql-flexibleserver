@@ -2,6 +2,8 @@
 
 This is a Terraform module for PostgreSQL Flexible Server in the style of Azure Verified Modules.  For official modules please see <https://aka.ms/AVM>.
 
+Use the `modules/database` submodule when application teams need to manage databases separately from the server lifecycle.
+
 > [!IMPORTANT]
 > As the overall AVM framework is not GA (generally available) yet - the CI framework and test automation is not fully functional and implemented across all supported languages yet - breaking changes are expected, and additional customer feedback is yet to be gathered and incorporated. Hence, modules **MUST NOT** be published at version `1.0.0` or higher at this time.
 >

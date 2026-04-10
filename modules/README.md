@@ -1,4 +1,7 @@
 # Sub-modules
 
-Create directories for each sub-module if required.
+Available submodules:
+
+- `database` - manage a PostgreSQL Flexible Server database on an existing server.
+
 README.md files will be automatically generated for each sub-module using `terraform-docs`.

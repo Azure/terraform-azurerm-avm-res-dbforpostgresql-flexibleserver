@@ -1,3 +1,3 @@
-# Postgres with database example
+# Postgres database submodule example
 
-This deploys the module with a database
+This deploys the server with the root module and then creates the database separately with the `database` submodule.
