@@ -1,3 +1,7 @@
-output "database_resource_ids" {
-  value = module.test.database_resource_ids
+output "database_resource_id" {
+  value = module.database.resource_id
+}
+
+output "server_resource_id" {
+  value = module.server.resource_id
 }

@@ -4,6 +4,8 @@
 
 This is a Terraform module for PostgreSQL Flexible Server in the style of Azure Verified Modules.  For official modules please see <https://aka.ms/AVM>.
 
+Use the `modules/database` submodule when application teams need to manage databases separately from the server lifecycle.
+
 > [!IMPORTANT]
 > As the overall AVM framework is not GA (generally available) yet - the CI framework and test automation is not fully functional and implemented across all supported languages yet - breaking changes are expected, and additional customer feedback is yet to be gathered and incorporated. Hence, modules **MUST NOT** be published at version `1.0.0` or higher at this time.
 >
@@ -35,7 +37,6 @@ The following resources are used by this module:
 - [azurerm_postgresql_flexible_server.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server) (resource)
 - [azurerm_postgresql_flexible_server_active_directory_administrator.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_active_directory_administrator) (resource)
 - [azurerm_postgresql_flexible_server_configuration.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_configuration) (resource)
-- [azurerm_postgresql_flexible_server_database.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_database) (resource)
 - [azurerm_postgresql_flexible_server_firewall_rule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_firewall_rule) (resource)
 - [azurerm_postgresql_flexible_server_virtual_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server_virtual_endpoint) (resource)
 - [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
@@ -193,15 +194,17 @@ Default: `null`
 
 ### <a name="input_databases"></a> [databases](#input\_databases)
 
-Description: - `name` - (Required) Specifies the name of the PostgreSQL Database, which needs [to be a valid PostgreSQL identifier](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS). Changing this forces a new resource to be created.
-- `charset` - (Optional)  Specifies the Charset for the PostgreSQL Database, which needs [to be a valid PostgreSQL Charset](https://www.postgresql.org/docs/current/static/multibyte.html). Changing this forces a new resource to be created.
-- `collation` - (Optional) Specifies the Collation for the PostgreSQL Database, which needs [to be a valid PostgreSQL Collation](https://www.postgresql.org/docs/current/static/collation.html). Note that Microsoft uses different [notation](https://msdn.microsoft.com/library/windows/desktop/dd373814.aspx)
+Description: A map of PostgreSQL databases to create via the `database` submodule.
 
----
-`timeouts` block supports the following:
-- `create` - (Defaults to 60 minutes) Used when creating the PostgreSQL Database.
-- `delete` - (Defaults to 60 minutes) Used when deleting the PostgreSQL Database.
-- `read` - (Defaults to 5 minutes) Used when retrieving the PostgreSQL Database.
+ - `name` - (Required) Specifies the name of the PostgreSQL Database, which needs [to be a valid PostgreSQL identifier](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS). Changing this forces a new resource to be created.
+ - `charset` - (Optional)  Specifies the Charset for the PostgreSQL Database, which needs [to be a valid PostgreSQL Charset](https://www.postgresql.org/docs/current/static/multibyte.html). Changing this forces a new resource to be created.
+ - `collation` - (Optional) Specifies the Collation for the PostgreSQL Database, which needs [to be a valid PostgreSQL Collation](https://www.postgresql.org/docs/current/static/collation.html). Note that Microsoft uses different [notation](https://msdn.microsoft.com/library/windows/desktop/dd373814.aspx)
+
+ ---
+ `timeouts` block supports the following:
+ - `create` - (Defaults to 60 minutes) Used when creating the PostgreSQL Database.
+ - `delete` - (Defaults to 60 minutes) Used when deleting the PostgreSQL Database.
+ - `read` - (Defaults to 5 minutes) Used when retrieving the PostgreSQL Database.
 
 Type:
 
@@ -663,7 +666,13 @@ Description: The resource ID for the resource.
 
 ## Modules
 
-No modules.
+The following Modules are called:
+
+### <a name="module_databases"></a> [databases](#module\_databases)
+
+Source: ./modules/database
+
+Version:
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

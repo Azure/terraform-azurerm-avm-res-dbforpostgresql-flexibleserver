@@ -54,21 +54,14 @@ resource "random_password" "myadminpassword" {
 # Do not specify location here due to the randomization above.
 # Leaving location as `null` will cause the module to use the resource group location
 # with a data source.
-module "test" {
+module "server" {
   source = "../../"
 
-  location               = azurerm_resource_group.this.location
-  name                   = module.naming.postgresql_server.name_unique
-  resource_group_name    = azurerm_resource_group.this.name
-  administrator_login    = "psqladmin"
-  administrator_password = random_password.myadminpassword.result
-  databases = {
-    pgdb = {
-      charset   = "UTF8"
-      collation = "en_US.utf8"
-      name      = module.naming.postgresql_database.name_unique
-    }
-  }
+  location                     = azurerm_resource_group.this.location
+  name                         = module.naming.postgresql_server.name_unique
+  resource_group_name          = azurerm_resource_group.this.name
+  administrator_login          = "psqladmin"
+  administrator_password       = random_password.myadminpassword.result
   enable_telemetry             = var.enable_telemetry
   geo_redundant_backup_enabled = true
   high_availability = {
@@ -79,5 +72,14 @@ module "test" {
   sku_name       = "GP_Standard_D2s_v3"
   tags           = null
   zone           = 1
+}
+
+module "database" {
+  source = "../../modules/database"
+
+  name      = module.naming.postgresql_database.name_unique
+  server_id = module.server.resource_id
+  charset   = "UTF8"
+  collation = "en_US.utf8"
 }
 
