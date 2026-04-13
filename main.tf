@@ -1,3 +1,4 @@
+# tflint-ignore: azurerm_postgresql_flexible_server.high_availability.mode -- high_availability is optional in this module and defaults to null to support regions where it is not available
 resource "azurerm_postgresql_flexible_server" "this" {
   location                          = var.location
   name                              = var.name
