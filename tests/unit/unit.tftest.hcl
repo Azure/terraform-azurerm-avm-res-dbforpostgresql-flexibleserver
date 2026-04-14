@@ -50,3 +50,25 @@ run "root_module_exposes_database_outputs" {
   }
 }
 
+run "authentication_accepts_active_directory_enabled" {
+  command = plan
+
+  variables {
+    authentication = {
+      active_directory_auth_enabled = true
+      password_auth_enabled         = true
+      tenant_id                     = "12345678-1234-1234-1234-123456789012"
+    }
+  }
+
+  assert {
+    condition     = var.authentication.active_directory_auth_enabled == true
+    error_message = "The authentication variable should accept an object type with active_directory_auth_enabled set to true."
+  }
+
+  assert {
+    condition     = var.authentication.tenant_id == "12345678-1234-1234-1234-123456789012"
+    error_message = "The authentication variable should accept an object type with tenant_id as a string."
+  }
+}
+
