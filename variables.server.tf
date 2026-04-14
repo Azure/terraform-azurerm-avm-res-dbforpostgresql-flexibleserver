@@ -35,8 +35,17 @@ variable "authentication" {
   description = <<-EOT
  - `active_directory_auth_enabled` - (Optional)  Whether or not Active Directory authentication is allowed to access the PostgreSQL Flexible Server. Defaults to `false`.
  - `password_auth_enabled` - (Optional) Whether or not password authentication is allowed to access the PostgreSQL Flexible Server. Defaults to `true`.
- - `tenant_id` - (Optional) The Tenant ID of the Azure Active Directory which is used by the Active Directory authentication. `active_directory_auth_enabled` must be set to `true`.
+ - `tenant_id` - (Optional) The Tenant ID of the Azure Active Directory which is used by the Active Directory authentication. Required when `active_directory_auth_enabled` is set to `true`.
 EOT
+
+  validation {
+    condition = (
+      var.authentication == null ||
+      !coalesce(var.authentication.active_directory_auth_enabled, false) ||
+      var.authentication.tenant_id != null
+    )
+    error_message = "The `tenant_id` must be provided when `active_directory_auth_enabled` is set to `true`."
+  }
 }
 
 variable "auto_grow_enabled" {
