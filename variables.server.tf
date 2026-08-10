@@ -13,10 +13,10 @@ variable "administrator_password" {
 
 variable "administrator_password_wo" {
   type        = string
-  ephemeral   = true
   default     = null
   description = "(Optional) The Password associated with the administrator_login for the PostgreSQL Flexible Server. This can be used to avoid storing the password in state."
   sensitive   = true
+  ephemeral   = true
 }
 
 variable "administrator_password_wo_version" {

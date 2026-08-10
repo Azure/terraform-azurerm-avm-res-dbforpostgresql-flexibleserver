@@ -32,6 +32,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
       tenant_id                     = authentication.value.tenant_id
     }
   }
+
   dynamic "customer_managed_key" {
     for_each = var.customer_managed_key == null ? [] : [var.customer_managed_key]
 
@@ -42,6 +43,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
       primary_user_assigned_identity_id    = customer_managed_key.value.primary_user_assigned_identity_id
     }
   }
+
   dynamic "high_availability" {
     for_each = var.high_availability == null ? [] : [var.high_availability]
 
@@ -50,6 +52,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
       standby_availability_zone = high_availability.value.standby_availability_zone
     }
   }
+
   dynamic "identity" {
     for_each = local.managed_identities.system_assigned_user_assigned
 
@@ -58,6 +61,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
       identity_ids = identity.value.user_assigned_resource_ids
     }
   }
+
   dynamic "maintenance_window" {
     for_each = var.maintenance_window == null ? [] : [var.maintenance_window]
 
@@ -67,6 +71,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
       start_minute = maintenance_window.value.start_minute
     }
   }
+
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
 
@@ -135,6 +140,7 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
       category_group = enabled_log.value
     }
   }
+
   dynamic "metric" {
     for_each = each.value.metric_categories
 
