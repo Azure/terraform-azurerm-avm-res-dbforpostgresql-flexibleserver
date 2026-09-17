@@ -69,7 +69,7 @@ module "test" {
   resource_group_name          = azurerm_resource_group.this.name
   administrator_login          = "psqladmin"
   administrator_password       = random_password.myadminpassword.result
-  enable_telemetry             = var.enable_telemetry
+  enable_telemetry             = false
   geo_redundant_backup_enabled = true
   high_availability = {
     mode                      = "ZoneRedundant"
