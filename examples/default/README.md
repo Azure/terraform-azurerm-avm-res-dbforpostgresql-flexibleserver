@@ -69,7 +69,7 @@ module "test" {
   resource_group_name          = azurerm_resource_group.this.name
   administrator_login          = "psqladmin"
   administrator_password       = random_password.myadminpassword.result
-  enable_telemetry             = false
+  enable_telemetry             = var.enable_telemetry
   geo_redundant_backup_enabled = true
   high_availability = {
     mode                      = "ZoneRedundant"
@@ -118,7 +118,7 @@ If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
-Default: `true`
+Default: `false`
 
 ## Outputs
 
