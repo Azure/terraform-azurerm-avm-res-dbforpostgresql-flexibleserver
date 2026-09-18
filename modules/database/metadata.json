@@ -1,0 +1,7 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-verified-modules-tools/main/src/Avm.Authoring/Resources/Schemas/v1/avm-module-metadata.schema.json",
+  "moduleDisplayName": "PostgreSQL Flexible Server database submodule",
+  "moduleDescription": "Use this submodule when the PostgreSQL server lifecycle is managed separately from the application database lifecycle.",
+  "canonicalType": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+  "telemetryIdPrefix": "46d3xtrf.res.bab1114"
+}
