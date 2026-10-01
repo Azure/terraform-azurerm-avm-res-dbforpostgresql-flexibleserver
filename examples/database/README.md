@@ -11,7 +11,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.12"
+      version = ">= 4.31, < 6.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -21,6 +21,9 @@ terraform {
 }
 
 provider "azurerm" {
+  resource_provider_registrations = "none"
+  resource_providers_to_register  = ["Microsoft.DBforPostgreSQL"]
+
   features {}
 }
 
@@ -98,7 +101,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.12)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.31, < 6.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
