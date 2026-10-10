@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.12"
+      version = ">= 4.31, < 6.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -14,6 +14,9 @@ terraform {
 }
 
 provider "azurerm" {
+  resource_provider_registrations = "none"
+  resource_providers_to_register  = ["Microsoft.DBforPostgreSQL"]
+
   features {}
 }
 
