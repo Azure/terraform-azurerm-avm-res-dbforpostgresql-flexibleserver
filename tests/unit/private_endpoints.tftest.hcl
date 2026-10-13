@@ -25,6 +25,8 @@ mock_provider "azapi" {
   }
 }
 
+mock_provider "modtm" {}
+
 mock_provider "random" {
   mock_resource "random_uuid" {
     defaults = {
@@ -91,6 +93,13 @@ variables {
 run "managed_defaults" {
   command = apply
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
   variables {
     lock = { kind = "ReadOnly" }
     private_endpoints = {
@@ -134,6 +143,13 @@ run "managed_defaults" {
 run "unmanaged_defaults" {
   command = apply
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
   variables {
     private_endpoints_manage_dns_zone_group = false
     private_endpoints = {
@@ -168,6 +184,13 @@ run "unmanaged_defaults" {
 
 run "explicit_nulls" {
   command = apply
+
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
 
   variables {
     private_endpoints = {
@@ -212,6 +235,13 @@ run "explicit_nulls" {
 
 run "managed_supplied_fields" {
   command = apply
+
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
 
   variables {
     retry = {
@@ -293,6 +323,13 @@ run "managed_supplied_fields" {
 run "unmanaged_supplied_fields" {
   command = apply
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
   variables {
     private_endpoints_manage_dns_zone_group = false
   }
@@ -321,6 +358,13 @@ run "unmanaged_supplied_fields" {
 
 run "attachment_defaults_and_empty_tags" {
   command = apply
+
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
 
   variables {
     private_endpoints = {
@@ -357,6 +401,13 @@ run "attachment_defaults_and_empty_tags" {
 run "null_endpoint_map" {
   command = plan
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
   variables {
     private_endpoints = null
   }
@@ -375,6 +426,13 @@ run "null_endpoint_map" {
 run "disabled_lock" {
   command = apply
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
   variables {
     private_endpoints = {
       disabled = {
@@ -392,6 +450,13 @@ run "disabled_lock" {
 
 run "azapi_control_overrides" {
   command = apply
+
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
 
   variables {
     private_endpoints = {
@@ -432,6 +497,13 @@ run "azapi_control_overrides" {
 run "invalid_subnet" {
   command = plan
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
   variables {
     private_endpoints = { invalid = { subnet_resource_id = "not-a-subnet-id" } }
   }
@@ -441,6 +513,13 @@ run "invalid_subnet" {
 
 run "invalid_dns_zone" {
   command = plan
+
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
 
   variables {
     private_endpoints = {
@@ -457,6 +536,13 @@ run "invalid_dns_zone" {
 run "invalid_application_security_group" {
   command = plan
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
   variables {
     private_endpoints = {
       invalid = {
@@ -471,6 +557,13 @@ run "invalid_application_security_group" {
 
 run "invalid_delegated_identity" {
   command = plan
+
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
 
   variables {
     private_endpoints = {
@@ -493,6 +586,13 @@ run "invalid_delegated_identity" {
 run "unknown_role_name" {
   command = apply
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
   variables {
     private_endpoints = {
       invalid = {
@@ -512,6 +612,13 @@ run "unknown_role_name" {
 
 run "role_keys_do_not_collide" {
   command = apply
+
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
 
   variables {
     private_endpoints = {

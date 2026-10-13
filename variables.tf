@@ -36,7 +36,8 @@ DESCRIPTION
 }
 
 variable "customer_managed_key" {
-  # tflint-ignore: customer_managed_key
+  # PostgreSQL needs separate primary/geo-backup key URIs and identity ARM IDs.
+  # tflint-ignore: avm_interface_customer_managed_key
   type = object({
     key_vault_key_id                     = string
     geo_backup_key_vault_key_id          = optional(string)
@@ -45,12 +46,32 @@ variable "customer_managed_key" {
   })
   default     = null
   description = <<DESCRIPTION
-A map describing customer-managed keys to associate with the resource. This includes the following properties:
-- `key_vault_key_id` - (Required) The ID of the Key Vault Key..
-- `geo_backup_key_vault_key_id` - (Optional) The ID of the geo backup Key Vault Key
-- `geo_backup_user_assigned_identity_id` - (Optional) The geo backup user managed identity id for a Customer Managed Key. Should be added with identity_ids
-- `primary_user_assigned_identity` - (Optional) Specifies the primary user managed identity id for a Customer Managed Key. Should be added with identity_ids
-DESCRIPTION  
+PostgreSQL server and geo-backup encryption settings. Key identifiers are full Key Vault key URIs, not vault or key ARM resource IDs. Identity identifiers are user-assigned identity ARM resource IDs, not client IDs.
+
+- `key_vault_key_id` - (Required) The primary key URI, with or without its version segment.
+- `geo_backup_key_vault_key_id` - (Optional) The separate geo-backup key URI, with or without its version segment. The key's vault must be in the geo-backup region.
+- `geo_backup_user_assigned_identity_id` - (Optional) The geo-backup identity ARM resource ID. Include it in `managed_identities.user_assigned_resource_ids`. It must differ from the primary identity and be in the geo-backup region.
+- `primary_user_assigned_identity_id` - (Optional) The primary encryption identity ARM resource ID. Include it in `managed_identities.user_assigned_resource_ids`.
+
+Key URIs and identity IDs are passed through unchanged. Changing this encryption configuration can replace the PostgreSQL server.
+DESCRIPTION
+
+  validation {
+    condition     = var.customer_managed_key == null ? true : can(regex("^https://[^/?#]+/keys/[^/?#]+(/[^/?#]+)?$", var.customer_managed_key.key_vault_key_id))
+    error_message = "`customer_managed_key.key_vault_key_id` must be a full HTTPS key URI in the form `https://{vaultHost}/keys/{keyName}` or `https://{vaultHost}/keys/{keyName}/{keyVersion}`."
+  }
+  validation {
+    condition     = var.customer_managed_key == null ? true : var.customer_managed_key.geo_backup_key_vault_key_id == null || can(regex("^https://[^/?#]+/keys/[^/?#]+(/[^/?#]+)?$", var.customer_managed_key.geo_backup_key_vault_key_id))
+    error_message = "`customer_managed_key.geo_backup_key_vault_key_id` must be a full HTTPS key URI, with or without its version segment, or null."
+  }
+  validation {
+    condition     = var.customer_managed_key == null ? true : var.customer_managed_key.primary_user_assigned_identity_id == null || can(provider::azapi::parse_resource_id("Microsoft.ManagedIdentity/userAssignedIdentities", var.customer_managed_key.primary_user_assigned_identity_id))
+    error_message = "`customer_managed_key.primary_user_assigned_identity_id` must be a user-assigned managed identity ARM resource ID, not a client ID, or null."
+  }
+  validation {
+    condition     = var.customer_managed_key == null ? true : var.customer_managed_key.geo_backup_user_assigned_identity_id == null || can(provider::azapi::parse_resource_id("Microsoft.ManagedIdentity/userAssignedIdentities", var.customer_managed_key.geo_backup_user_assigned_identity_id))
+    error_message = "`customer_managed_key.geo_backup_user_assigned_identity_id` must be a user-assigned managed identity ARM resource ID, not a client ID, or null."
+  }
 }
 
 variable "diagnostic_settings" {
@@ -141,6 +162,14 @@ Controls the Managed Identity configuration on this resource. The following prop
 - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
 DESCRIPTION
   nullable    = false
+
+  validation {
+    condition = alltrue([
+      for id in var.managed_identities.user_assigned_resource_ids :
+      can(provider::azapi::parse_resource_id("Microsoft.ManagedIdentity/userAssignedIdentities", id))
+    ])
+    error_message = "Each entry in `managed_identities.user_assigned_resource_ids` must be a valid user-assigned managed identity resource ID."
+  }
 }
 
 variable "private_endpoints" {

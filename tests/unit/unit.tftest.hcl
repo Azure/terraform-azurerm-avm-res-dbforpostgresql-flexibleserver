@@ -18,6 +18,8 @@ mock_provider "azurerm" {
 
 mock_provider "azapi" {}
 
+mock_provider "modtm" {}
+
 mock_provider "random" {}
 
 variables {
@@ -43,6 +45,13 @@ variables {
 run "root_module_exposes_database_outputs" {
   command = apply
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
   assert {
     condition = (
       length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 0 &&
@@ -66,6 +75,10 @@ run "root_module_exposes_database_outputs" {
 
 run "database_submodule_can_be_used_directly" {
   command = apply
+
+  providers = {
+    azurerm = azurerm
+  }
 
   module {
     source = "./modules/database"

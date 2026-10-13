@@ -4,6 +4,12 @@ This is a Terraform module for PostgreSQL Flexible Server in the style of Azure 
 
 Use the `modules/database` submodule when application teams need to manage databases separately from the server lifecycle.
 
+## Encryption
+
+`customer_managed_key` accepts full primary and optional geo-backup key URIs, including versionless URIs. Its identity values are user-assigned identity ARM resource IDs, not client IDs; include each supplied identity in `managed_identities.user_assigned_resource_ids`. A geo-backup key and identity remain independent of the primary pair and must be in the backup region.
+
+When upgrading, retain the same key URIs and identity IDs. They are passed through unchanged; changing encryption settings can replace the server. No resource-address or state migration is introduced.
+
 ## Private endpoint compatibility
 
 Endpoint `role_assignments` and `lock` settings are now applied; earlier versions accepted but ignored them. Review existing values before upgrading because they now create permissions and locks. Omitted/null settings create neither, `lock.kind = "None"` disables the endpoint lock, and the server's lock is not implicitly copied to endpoints.
