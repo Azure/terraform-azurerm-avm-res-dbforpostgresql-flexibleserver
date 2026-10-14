@@ -171,6 +171,8 @@ variable "timeouts" {
   })
   default     = null
   description = <<-EOT
+Optional timeouts for the server and AzAPI private endpoint authorization resources. Omitted values retain each provider's defaults.
+
  - `create` - (Defaults to 1 hour) Used when creating the PostgreSQL Flexible Server.
  - `delete` - (Defaults to 1 hour) Used when deleting the PostgreSQL Flexible Server.
  - `read` - (Defaults to 5 minutes) Used when retrieving the PostgreSQL Flexible Server.

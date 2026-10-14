@@ -16,6 +16,12 @@ mock_provider "azurerm" {
   }
 }
 
+mock_provider "azapi" {}
+
+mock_provider "modtm" {}
+
+mock_provider "random" {}
+
 variables {
   administrator_login               = "psqladmin"
   administrator_password            = null
@@ -39,6 +45,23 @@ variables {
 run "root_module_exposes_database_outputs" {
   command = apply
 
+  providers = {
+    azapi   = azapi
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
+  assert {
+    condition = (
+      length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 0 &&
+      length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 0 &&
+      length(azapi_resource.private_endpoint_role_assignments) == 0 &&
+      length(azapi_resource.private_endpoint_locks) == 0
+    )
+    error_message = "Omitted private endpoints must not create endpoints, permissions or locks."
+  }
+
   assert {
     condition     = output.database_name["app"].name == "appdb"
     error_message = "The root module should expose the created database name."
@@ -52,6 +75,10 @@ run "root_module_exposes_database_outputs" {
 
 run "database_submodule_can_be_used_directly" {
   command = apply
+
+  providers = {
+    azurerm = azurerm
+  }
 
   module {
     source = "./modules/database"

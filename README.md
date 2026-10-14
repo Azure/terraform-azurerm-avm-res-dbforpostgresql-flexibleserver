@@ -6,6 +6,20 @@ This is a Terraform module for PostgreSQL Flexible Server in the style of Azure 
 
 Use the `modules/database` submodule when application teams need to manage databases separately from the server lifecycle.
 
+## Encryption
+
+`customer_managed_key` accepts full primary and optional geo-backup key URIs, including versionless URIs. Its identity values are user-assigned identity ARM resource IDs, not client IDs; include each supplied identity in `managed_identities.user_assigned_resource_ids`. A geo-backup key and identity remain independent of the primary pair and must be in the backup region.
+
+When upgrading, retain the same key URIs and identity IDs. They are passed through unchanged; changing encryption settings can replace the server. No resource-address or state migration is introduced.
+
+## Private endpoint compatibility
+
+Endpoint `role_assignments` and `lock` settings are now applied; earlier versions accepted but ignored them. Review existing values before upgrading because they now create permissions and locks. Omitted/null settings create neither, `lock.kind = "None"` disables the endpoint lock, and the server's lock is not implicitly copied to endpoints.
+
+Endpoint resource addresses, `pe-${name}`/`pse-${name}` defaults, per-endpoint tags and DNS-management selection are unchanged. Omitted/null subresource and IP member names remain `postgresqlServer`. Explicit `subresource_name` or IP `member_name` values are now honored and can replace an endpoint when they differ from those historical defaults. Use only values supported by PostgreSQL Private Link.
+
+This AzureRM-based endpoint implementation still accepts a resource group **name**, not an ARM ID, and defaults `location` to the module's `location`. Tags are not inherited from the server. Endpoint role assignments use AzAPI: it performs no AzureRM directory preflight, so `skip_service_principal_aad_check` is accepted for interface compatibility but has no effect for either value. Set `principal_type` explicitly when required. Role definition lookup requires read access at the endpoint scope.
+
 > [!IMPORTANT]
 > As the overall AVM framework is not GA (generally available) yet - the CI framework and test automation is not fully functional and implemented across all supported languages yet - breaking changes are expected, and additional customer feedback is yet to be gathered and incorporated. Hence, modules **MUST NOT** be published at version `1.0.0` or higher at this time.
 >
@@ -32,6 +46,8 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.private_endpoint_locks](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.private_endpoint_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_postgresql_flexible_server.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server) (resource)
@@ -44,8 +60,10 @@ The following resources are used by this module:
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
+- [random_uuid.private_endpoint_role_assignment](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource_list.private_endpoint_role_definitions](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -173,11 +191,14 @@ Default: `null`
 
 ### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
 
-Description: A map describing customer-managed keys to associate with the resource. This includes the following properties:
-- `key_vault_key_id` - (Required) The ID of the Key Vault Key..
-- `geo_backup_key_vault_key_id` - (Optional) The ID of the geo backup Key Vault Key
-- `geo_backup_user_assigned_identity_id` - (Optional) The geo backup user managed identity id for a Customer Managed Key. Should be added with identity\_ids
-- `primary_user_assigned_identity` - (Optional) Specifies the primary user managed identity id for a Customer Managed Key. Should be added with identity\_ids
+Description: PostgreSQL server and geo-backup encryption settings. Key identifiers are full Key Vault key URIs, not vault or key ARM resource IDs. Identity identifiers are user-assigned identity ARM resource IDs, not client IDs.
+
+- `key_vault_key_id` - (Required) The primary key URI, with or without its version segment.
+- `geo_backup_key_vault_key_id` - (Optional) The separate geo-backup key URI, with or without its version segment. The key's vault must be in the geo-backup region.
+- `geo_backup_user_assigned_identity_id` - (Optional) The geo-backup identity ARM resource ID. Include it in `managed_identities.user_assigned_resource_ids`. It must differ from the primary identity and be in the geo-backup region.
+- `primary_user_assigned_identity_id` - (Optional) The primary encryption identity ARM resource ID. Include it in `managed_identities.user_assigned_resource_ids`.
+
+Key URIs and identity IDs are passed through unchanged. Changing this encryption configuration can replace the PostgreSQL server.
 
 Type:
 
@@ -335,6 +356,24 @@ Default:
 }
 ```
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body paths whose changes AzAPI ignores for private endpoint locks and role assignments. Non-empty values require Terraform 1.11 or later and take effect after apply. Ignored changes are not sent to Azure until the path is removed.
+
+- `authorization_locks` - Ignored body paths for private endpoint locks.
+- `authorization_role_assignments` - Ignored body paths for private endpoint role assignments.
+
+Type:
+
+```hcl
+object({
+    authorization_locks            = optional(list(string), [])
+    authorization_role_assignments = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
 Description: Controls the Resource Lock configuration for this resource. The following properties can be specified:
@@ -415,23 +454,37 @@ Default: `null`
 
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
-Description: A map of private endpoints to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of private endpoints to create on the PostgreSQL Flexible Server. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
 - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
+  - `name` - (Optional) The name of the role assignment. If not set, a random UUID will be generated. Changing this forces the creation of a new resource.
+  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
+  - `principal_id` - The ID of the principal to assign the role to.
+  - `description` - (Optional) The description of the role assignment.
+  - `skip_service_principal_aad_check` - (Optional) Compatibility flag, defaulting to false. AzAPI performs no Azure Active Directory preflight for endpoint role assignments, so neither value changes the request.
+  - `condition` - (Optional) The condition which will be used to scope the role assignment.
+  - `condition_version` - (Optional) The version of the condition syntax. Leave as `null` if you are not using a condition, if you are then valid values are '2.0'.
+  - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
+  - `principal_type` - (Optional) The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
 - `lock` - (Optional) The lock level to apply to the private endpoint. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+  - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
+  - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
+  - `notes` - (Optional) Notes about the lock. This value maps to `Microsoft.Authorization/locks.properties.notes`.
 - `tags` - (Optional) A mapping of tags to assign to the private endpoint.
 - `subnet_resource_id` - The resource ID of the subnet to deploy the private endpoint in.
+- `subresource_name` (Optional) - The name of the sub resource for the private endpoint.
 - `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. One will be generated if not set.
 - `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
-- `application_security_group_resource_ids` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+- `application_security_group_associations` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 - `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
 - `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
-- `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
-- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of this resource.
+- `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the module's `location`.
+- `resource_group_name` - (Optional) The resource group name, not an ARM ID, where this module's AzureRM private endpoints will be deployed. Defaults to the module's `resource_group_name`.
 - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   - `name` - The name of the IP configuration.
   - `private_ip_address` - The private IP address of the IP configuration.
+  - `member_name` - (Optional) The private IP configuration member name.
 
 Type:
 
@@ -439,6 +492,7 @@ Type:
 map(object({
     name = optional(string, null)
     role_assignments = optional(map(object({
+      name                                   = optional(string, null)
       role_definition_id_or_name             = string
       principal_id                           = string
       description                            = optional(string, null)
@@ -449,11 +503,13 @@ map(object({
       principal_type                         = optional(string, null)
     })), {})
     lock = optional(object({
-      kind = string
-      name = optional(string, null)
+      kind  = string
+      name  = optional(string, null)
+      notes = optional(string, null)
     }), null)
     tags                                    = optional(map(string), null)
     subnet_resource_id                      = string
+    subresource_name                        = optional(string, null)
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})
@@ -464,6 +520,7 @@ map(object({
     ip_configurations = optional(map(object({
       name               = string
       private_ip_address = string
+      member_name        = optional(string)
     })), {})
   }))
 ```
@@ -491,6 +548,46 @@ Default: `false`
 Description: (Optional) The replication role for the PostgreSQL Flexible Server. Possible value is `None`.
 
 Type: `string`
+
+Default: `null`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: Override the AzAPI resource types and API versions used for private endpoint authorization resources.
+
+- `authorization_locks` - Private endpoint management locks.
+- `authorization_role_assignments` - Private endpoint role assignments.
+- `authorization_role_definitions` - Role definition lookups at each private endpoint scope.
+
+Type:
+
+```hcl
+object({
+    authorization_locks            = optional(string, "Microsoft.Authorization/locks@2016-09-01")
+    authorization_role_assignments = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
+    authorization_role_definitions = optional(string, "Microsoft.Authorization/roleDefinitions@2022-04-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration for AzAPI private endpoint locks, role assignments and role definition lookups. Defaults to null, using provider defaults.
+
+- `error_message_regex` - Error message patterns that trigger a retry.
+- `interval_seconds` - Initial interval between retries.
+- `max_interval_seconds` - Maximum interval between retries.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
 
 Default: `null`
 
@@ -592,10 +689,12 @@ Default: `null`
 
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
-Description: - `create` - (Defaults to 1 hour) Used when creating the PostgreSQL Flexible Server.
-- `delete` - (Defaults to 1 hour) Used when deleting the PostgreSQL Flexible Server.
-- `read` - (Defaults to 5 minutes) Used when retrieving the PostgreSQL Flexible Server.
-- `update` - (Defaults to 1 hour) Used when updating the PostgreSQL Flexible Server.
+Description: Optional timeouts for the server and AzAPI private endpoint authorization resources. Omitted values retain each provider's defaults.
+
+ - `create` - (Defaults to 1 hour) Used when creating the PostgreSQL Flexible Server.
+ - `delete` - (Defaults to 1 hour) Used when deleting the PostgreSQL Flexible Server.
+ - `read` - (Defaults to 5 minutes) Used when retrieving the PostgreSQL Flexible Server.
+ - `update` - (Defaults to 1 hour) Used when updating the PostgreSQL Flexible Server.
 
 Type:
 

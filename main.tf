@@ -88,6 +88,15 @@ resource "azurerm_postgresql_flexible_server" "this" {
       zone,
       high_availability[0].standby_availability_zone,
     ]
+
+    precondition {
+      condition     = var.customer_managed_key == null ? true : var.customer_managed_key.primary_user_assigned_identity_id == null ? true : contains([for id in var.managed_identities.user_assigned_resource_ids : lower(id)], lower(var.customer_managed_key.primary_user_assigned_identity_id))
+      error_message = "`customer_managed_key.primary_user_assigned_identity_id` must also be included in `managed_identities.user_assigned_resource_ids`."
+    }
+    precondition {
+      condition     = var.customer_managed_key == null ? true : var.customer_managed_key.geo_backup_user_assigned_identity_id == null ? true : contains([for id in var.managed_identities.user_assigned_resource_ids : lower(id)], lower(var.customer_managed_key.geo_backup_user_assigned_identity_id))
+      error_message = "`customer_managed_key.geo_backup_user_assigned_identity_id` must also be included in `managed_identities.user_assigned_resource_ids`."
+    }
   }
 }
 
