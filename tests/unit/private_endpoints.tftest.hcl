@@ -23,9 +23,12 @@ mock_provider "azapi" {
       }
     }
   }
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
-
-mock_provider "modtm" {}
 
 mock_provider "random" {
   mock_resource "random_uuid" {
@@ -96,8 +99,8 @@ run "managed_defaults" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -146,8 +149,8 @@ run "unmanaged_defaults" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -188,8 +191,8 @@ run "explicit_nulls" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -239,8 +242,8 @@ run "managed_supplied_fields" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -326,8 +329,8 @@ run "unmanaged_supplied_fields" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -362,8 +365,8 @@ run "attachment_defaults_and_empty_tags" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -404,8 +407,8 @@ run "null_endpoint_map" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -429,8 +432,8 @@ run "disabled_lock" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -454,8 +457,8 @@ run "azapi_control_overrides" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -500,8 +503,8 @@ run "invalid_subnet" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -517,8 +520,8 @@ run "invalid_dns_zone" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -539,8 +542,8 @@ run "invalid_application_security_group" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -561,8 +564,8 @@ run "invalid_delegated_identity" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -589,8 +592,8 @@ run "unknown_role_name" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -616,8 +619,8 @@ run "role_keys_do_not_collide" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {

@@ -6,9 +6,13 @@ mock_provider "azurerm" {
   }
 }
 
-mock_provider "azapi" {}
-
-mock_provider "modtm" {}
+mock_provider "azapi" {
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
+}
 
 mock_provider "random" {}
 
@@ -27,8 +31,8 @@ run "encryption_and_identities_are_absent_by_default" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   assert {
@@ -46,8 +50,8 @@ run "explicit_null_encryption_preserves_absence" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -70,8 +74,8 @@ run "primary_key_uri_and_identity_arm_id_are_preserved" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -103,8 +107,8 @@ run "geo_backup_key_and_identity_are_independent" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -143,8 +147,8 @@ run "versionless_sovereign_key_uris_are_not_reconstructed" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -183,8 +187,8 @@ run "identity_membership_is_case_insensitive_without_rewriting_ids" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -212,8 +216,8 @@ run "system_assigned_identity_without_encryption_is_preserved" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -235,8 +239,8 @@ run "primary_identity_client_id_is_rejected" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -255,8 +259,8 @@ run "geo_backup_identity_client_id_is_rejected" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -276,8 +280,8 @@ run "primary_key_arm_id_is_rejected" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -295,8 +299,8 @@ run "geo_backup_secret_uri_is_rejected" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -315,8 +319,8 @@ run "managed_identity_client_id_is_rejected" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -332,8 +336,8 @@ run "unassigned_primary_identity_is_rejected" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {
@@ -355,8 +359,8 @@ run "unassigned_geo_backup_identity_is_rejected" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   variables {

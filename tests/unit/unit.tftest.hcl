@@ -16,9 +16,13 @@ mock_provider "azurerm" {
   }
 }
 
-mock_provider "azapi" {}
-
-mock_provider "modtm" {}
+mock_provider "azapi" {
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
+}
 
 mock_provider "random" {}
 
@@ -48,8 +52,8 @@ run "root_module_exposes_database_outputs" {
   providers = {
     azapi   = azapi
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+    random = random
   }
 
   assert {
@@ -78,6 +82,8 @@ run "database_submodule_can_be_used_directly" {
 
   providers = {
     azurerm = azurerm
+
+    azapi = azapi
   }
 
   module {

@@ -84,10 +84,12 @@ module "server" {
 module "database" {
   source = "../../modules/database"
 
-  name      = module.naming.postgresql_database.name_unique
-  server_id = module.server.resource_id
-  charset   = "UTF8"
-  collation = "en_US.utf8"
+  location         = var.location
+  name             = module.naming.postgresql_database.name_unique
+  server_id        = module.server.resource_id
+  charset          = "UTF8"
+  collation        = "en_US.utf8"
+  enable_telemetry = var.enable_telemetry
 }
 ```
 
@@ -128,6 +130,14 @@ If it is set to false, then no telemetry will be collected.
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region for this module's resources or telemetry deployment.
+
+Type: `string`
+
+Default: `"eastus"`
 
 ## Outputs
 
