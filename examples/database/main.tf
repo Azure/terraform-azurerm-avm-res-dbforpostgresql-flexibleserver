@@ -35,7 +35,7 @@ resource "random_integer" "region_index" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/avm-utl-naming/azure"
-  version = "0.2.0"
+  version = "0.3.0"
 }
 
 # This is required for resource modules
@@ -77,10 +77,10 @@ module "server" {
 module "database" {
   source = "../../modules/database"
 
-  location         = var.location
   name             = module.naming.postgresql_database.name_unique
   server_id        = module.server.resource_id
   charset          = "UTF8"
   collation        = "en_US.utf8"
   enable_telemetry = var.enable_telemetry
+  location         = var.location
 }
