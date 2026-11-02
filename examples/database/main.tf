@@ -77,10 +77,10 @@ module "server" {
 module "database" {
   source = "../../modules/database"
 
-  location         = var.location
   name             = module.naming.postgresql_database.name_unique
   server_id        = module.server.resource_id
   charset          = "UTF8"
   collation        = "en_US.utf8"
   enable_telemetry = var.enable_telemetry
+  location         = var.location
 }
