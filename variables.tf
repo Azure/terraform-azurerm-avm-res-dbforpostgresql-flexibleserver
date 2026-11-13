@@ -356,3 +356,98 @@ A map to allow you to create a Virtual Endpoint associated with a Postgres Flexi
 DESCRIPTION
   nullable    = false
 }
+
+variable "ignore_body_changes" {
+  type = object({
+    dbforpostgresql_flexible_servers = optional(list(string), [
+      "properties.availabilityZone",
+      "properties.highAvailability.standbyAvailabilityZone",
+    ])
+    dbforpostgresql_flexible_servers_administrators    = optional(list(string), [])
+    dbforpostgresql_flexible_servers_configurations    = optional(list(string), [])
+    dbforpostgresql_flexible_servers_firewall_rules    = optional(list(string), [])
+    dbforpostgresql_flexible_servers_virtual_endpoints = optional(list(string), [])
+    authorization_locks                                = optional(list(string), [])
+    authorization_role_assignments                     = optional(list(string), [])
+    insights_diagnostic_settings                       = optional(list(string), [])
+    network_private_endpoints = optional(list(string), [
+      "properties.privateDnsZoneGroups",
+    ])
+    network_private_endpoints_private_dns_zone_groups = optional(list(string), [])
+
+    dbforpostgresql_flexible_servers_databases = optional(object({
+      dbforpostgresql_flexible_servers_databases = optional(list(string), [])
+    }), {})
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Body paths whose changes AzAPI ignores for resources deployed by this module. Non-empty values require Terraform 1.11 or later and take effect after apply. Ignored changes are not sent to Azure until the path is removed.
+
+- `dbforpostgresql_flexible_servers` - Ignored body paths for the PostgreSQL Flexible Server resource.
+- `dbforpostgresql_flexible_servers_administrators` - Ignored body paths for Active Directory administrators.
+- `dbforpostgresql_flexible_servers_configurations` - Ignored body paths for PostgreSQL configurations.
+- `dbforpostgresql_flexible_servers_firewall_rules` - Ignored body paths for firewall rules.
+- `dbforpostgresql_flexible_servers_virtual_endpoints` - Ignored body paths for virtual endpoints.
+- `authorization_locks` - Ignored body paths for management locks.
+- `authorization_role_assignments` - Ignored body paths for role assignments.
+- `insights_diagnostic_settings` - Ignored body paths for diagnostic settings.
+- `network_private_endpoints` - Ignored body paths for private endpoints.
+- `network_private_endpoints_private_dns_zone_groups` - Ignored body paths for private DNS zone groups.
+- `dbforpostgresql_flexible_servers_databases` - Ignored body paths for the database submodule.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "resource_types" {
+  type = object({
+    dbforpostgresql_flexible_servers                   = optional(string, "Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01")
+    dbforpostgresql_flexible_servers_administrators    = optional(string, "Microsoft.DBforPostgreSQL/flexibleServers/administrators@2024-08-01")
+    dbforpostgresql_flexible_servers_configurations    = optional(string, "Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01")
+    dbforpostgresql_flexible_servers_firewall_rules    = optional(string, "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01")
+    dbforpostgresql_flexible_servers_virtual_endpoints = optional(string, "Microsoft.DBforPostgreSQL/flexibleServers/virtualEndpoints@2024-08-01")
+    authorization_locks                                = optional(string, "Microsoft.Authorization/locks@2020-05-01")
+    authorization_role_assignments                     = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
+    authorization_role_definitions                     = optional(string, "Microsoft.Authorization/roleDefinitions@2022-04-01")
+    insights_diagnostic_settings                       = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
+    network_private_endpoints                          = optional(string, "Microsoft.Network/privateEndpoints@2024-03-01")
+    network_private_endpoints_private_dns_zone_groups  = optional(string, "Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-03-01")
+
+    dbforpostgresql_flexible_servers_databases = optional(object({
+      dbforpostgresql_flexible_servers_databases = optional(string)
+    }), {})
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Override the AzAPI resource types and API versions used for resources deployed by this module.
+
+- `dbforpostgresql_flexible_servers` - PostgreSQL Flexible Server.
+- `dbforpostgresql_flexible_servers_administrators` - Active Directory administrators.
+- `dbforpostgresql_flexible_servers_configurations` - PostgreSQL configurations.
+- `dbforpostgresql_flexible_servers_firewall_rules` - Firewall rules.
+- `dbforpostgresql_flexible_servers_virtual_endpoints` - Virtual endpoints.
+- `authorization_locks` - Management locks.
+- `authorization_role_assignments` - Role assignments.
+- `authorization_role_definitions` - Role definition lookups.
+- `insights_diagnostic_settings` - Diagnostic settings.
+- `network_private_endpoints` - Private endpoints.
+- `network_private_endpoints_private_dns_zone_groups` - Private DNS zone groups.
+- `dbforpostgresql_flexible_servers_databases` - Database submodule resource types.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Retry configuration for AzAPI resources. Defaults to null, using provider defaults.
+
+- `error_message_regex` - Error message patterns that trigger a retry.
+- `interval_seconds` - Initial interval between retries.
+- `max_interval_seconds` - Maximum interval between retries.
+DESCRIPTION
+}

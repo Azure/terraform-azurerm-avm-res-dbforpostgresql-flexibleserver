@@ -1,38 +1,58 @@
 # The PE resource when we are managing the private_dns_zone_group block:
-resource "azurerm_private_endpoint" "this_managed_dns_zone_groups" {
+resource "azapi_resource" "private_endpoints_managed_dns_zone_groups" {
   for_each = { for k, v in var.private_endpoints : k => v if var.private_endpoints_manage_dns_zone_group }
 
-  location                      = each.value.location != null ? each.value.location : var.location
-  name                          = each.value.name != null ? each.value.name : "pe-${var.name}"
-  resource_group_name           = each.value.resource_group_name != null ? each.value.resource_group_name : var.resource_group_name
-  subnet_id                     = each.value.subnet_resource_id
-  custom_network_interface_name = each.value.network_interface_name
-  tags                          = each.value.tags
+  location  = each.value.location != null ? each.value.location : var.location
+  name      = each.value.name != null ? each.value.name : "pe-${var.name}"
+  parent_id = each.value.resource_group_name != null ? "${data.azapi_client_config.current.subscription_resource_id}/resourceGroups/${each.value.resource_group_name}" : "${data.azapi_client_config.current.subscription_resource_id}/resourceGroups/${var.resource_group_name}"
+  tags      = each.value.tags
+  type      = var.resource_types.network_private_endpoints
 
-  private_service_connection {
-    is_manual_connection           = false
-    name                           = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
-    private_connection_resource_id = azurerm_postgresql_flexible_server.this.id
-    subresource_names              = [coalesce(each.value.subresource_name, "postgresqlServer")]
-  }
-
-  dynamic "ip_configuration" {
-    for_each = each.value.ip_configurations
-
-    content {
-      name               = ip_configuration.value.name
-      private_ip_address = ip_configuration.value.private_ip_address
-      member_name        = coalesce(ip_configuration.value.member_name, "postgresqlServer")
-      subresource_name   = coalesce(each.value.subresource_name, "postgresqlServer")
+  body = {
+    properties = {
+      subnet = {
+        id = each.value.subnet_resource_id
+      }
+      customNetworkInterfaceName = each.value.network_interface_name
+      privateLinkServiceConnections = [
+        {
+          name = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
+          properties = {
+            privateLinkServiceId = azapi_resource.this.id
+            groupIds             = [coalesce(each.value.subresource_name, "postgresqlServer")]
+          }
+        }
+      ]
+      ipConfigurations = length(each.value.ip_configurations) > 0 ? [
+        for ip_k, ip_v in each.value.ip_configurations : {
+          name = ip_v.name
+          properties = {
+            groupId          = coalesce(each.value.subresource_name, "postgresqlServer")
+            memberName       = coalesce(ip_v.member_name, "postgresqlServer")
+            privateIPAddress = ip_v.private_ip_address
+          }
+        }
+      ] : null
+      applicationSecurityGroups = length(each.value.application_security_group_associations) > 0 ? [
+        for asg_k, asg_v in each.value.application_security_group_associations : {
+          id = asg_v
+        }
+      ] : null
     }
   }
 
-  dynamic "private_dns_zone_group" {
-    for_each = length(each.value.private_dns_zone_resource_ids) > 0 ? ["this"] : []
+  ignore_body_changes    = length(var.ignore_body_changes.network_private_endpoints) > 0 ? var.ignore_body_changes.network_private_endpoints : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
-      name                 = each.value.private_dns_zone_group_name
-      private_dns_zone_ids = each.value.private_dns_zone_resource_ids
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
     }
   }
 }
@@ -40,44 +60,99 @@ resource "azurerm_private_endpoint" "this_managed_dns_zone_groups" {
 # The PE resource when we are managing **not** the private_dns_zone_group block
 # An example use case is customers using Azure Policy to create private DNS zones
 # e.g. <https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/private-link-and-dns-integration-at-scale>
-resource "azurerm_private_endpoint" "this_unmanaged_dns_zone_groups" {
+resource "azapi_resource" "private_endpoints_unmanaged_dns_zone_groups" {
   for_each = { for k, v in var.private_endpoints : k => v if !var.private_endpoints_manage_dns_zone_group }
 
-  location                      = each.value.location != null ? each.value.location : var.location
-  name                          = each.value.name != null ? each.value.name : "pe-${var.name}"
-  resource_group_name           = each.value.resource_group_name != null ? each.value.resource_group_name : var.resource_group_name
-  subnet_id                     = each.value.subnet_resource_id
-  custom_network_interface_name = each.value.network_interface_name
-  tags                          = each.value.tags
+  location  = each.value.location != null ? each.value.location : var.location
+  name      = each.value.name != null ? each.value.name : "pe-${var.name}"
+  parent_id = each.value.resource_group_name != null ? "${data.azapi_client_config.current.subscription_resource_id}/resourceGroups/${each.value.resource_group_name}" : "${data.azapi_client_config.current.subscription_resource_id}/resourceGroups/${var.resource_group_name}"
+  tags      = each.value.tags
+  type      = var.resource_types.network_private_endpoints
 
-  private_service_connection {
-    is_manual_connection           = false
-    name                           = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
-    private_connection_resource_id = azurerm_postgresql_flexible_server.this.id
-    subresource_names              = [coalesce(each.value.subresource_name, "postgresqlServer")]
-  }
-
-  dynamic "ip_configuration" {
-    for_each = each.value.ip_configurations
-
-    content {
-      name               = ip_configuration.value.name
-      private_ip_address = ip_configuration.value.private_ip_address
-      member_name        = coalesce(ip_configuration.value.member_name, "postgresqlServer")
-      subresource_name   = coalesce(each.value.subresource_name, "postgresqlServer")
+  body = {
+    properties = {
+      subnet = {
+        id = each.value.subnet_resource_id
+      }
+      customNetworkInterfaceName = each.value.network_interface_name
+      privateLinkServiceConnections = [
+        {
+          name = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
+          properties = {
+            privateLinkServiceId = azapi_resource.this.id
+            groupIds             = [coalesce(each.value.subresource_name, "postgresqlServer")]
+          }
+        }
+      ]
+      ipConfigurations = length(each.value.ip_configurations) > 0 ? [
+        for ip_k, ip_v in each.value.ip_configurations : {
+          name = ip_v.name
+          properties = {
+            groupId          = coalesce(each.value.subresource_name, "postgresqlServer")
+            memberName       = coalesce(ip_v.member_name, "postgresqlServer")
+            privateIPAddress = ip_v.private_ip_address
+          }
+        }
+      ] : null
+      applicationSecurityGroups = length(each.value.application_security_group_associations) > 0 ? [
+        for asg_k, asg_v in each.value.application_security_group_associations : {
+          id = asg_v
+        }
+      ] : null
     }
   }
 
-  lifecycle {
-    ignore_changes = [private_dns_zone_group]
+  ignore_body_changes    = length(var.ignore_body_changes.network_private_endpoints) > 0 ? var.ignore_body_changes.network_private_endpoints : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
   }
 }
 
-resource "azurerm_private_endpoint_application_security_group_association" "this" {
-  for_each = local.private_endpoint_application_security_group_associations
+resource "azapi_resource" "private_dns_zone_groups" {
+  for_each = {
+    for k, v in var.private_endpoints : k => v
+    if var.private_endpoints_manage_dns_zone_group && length(v.private_dns_zone_resource_ids) > 0
+  }
 
-  application_security_group_id = each.value.asg_resource_id
-  private_endpoint_id           = var.private_endpoints_manage_dns_zone_group ? azurerm_private_endpoint.this_managed_dns_zone_groups[each.value.pe_key].id : azurerm_private_endpoint.this_unmanaged_dns_zone_groups[each.value.pe_key].id
+  name      = each.value.private_dns_zone_group_name != null ? each.value.private_dns_zone_group_name : "default"
+  parent_id = azapi_resource.private_endpoints_managed_dns_zone_groups[each.key].id
+  type      = var.resource_types.network_private_endpoints_private_dns_zone_groups
+  body = {
+    properties = {
+      privateDnsZoneConfigs = [
+        for zone_id in each.value.private_dns_zone_resource_ids : {
+          name = replace(reverse(split("/", zone_id))[0], ".", "-")
+          properties = {
+            privateDnsZoneId = zone_id
+          }
+        }
+      ]
+    }
+  }
+  ignore_body_changes    = length(var.ignore_body_changes.network_private_endpoints_private_dns_zone_groups) > 0 ? var.ignore_body_changes.network_private_endpoints_private_dns_zone_groups : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
 data "azapi_resource_list" "private_endpoint_role_definitions" {
@@ -123,7 +198,7 @@ resource "azapi_resource" "private_endpoint_role_assignments" {
       condition                          = each.value.assignment.condition
       conditionVersion                   = each.value.assignment.condition_version
       delegatedManagedIdentityResourceId = each.value.assignment.delegated_managed_identity_resource_id
-      principalType                      = each.value.assignment.principal_type
+      principalType                      = each.value.assignment.principal_type != null ? each.value.assignment.principal_type : (each.value.assignment.skip_service_principal_aad_check ? "ServicePrincipal" : null)
     } : key => value if value != null }
   }
   ignore_body_changes = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
@@ -190,6 +265,14 @@ resource "azapi_resource" "private_endpoint_locks" {
   }
   depends_on = [
     azapi_resource.private_endpoint_role_assignments,
-    azurerm_private_endpoint_application_security_group_association.this,
+    azapi_resource.private_dns_zone_groups,
   ]
+}
+
+removed {
+  from = azurerm_private_endpoint_application_security_group_association.this
+
+  lifecycle {
+    destroy = false
+  }
 }
