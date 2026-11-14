@@ -165,7 +165,7 @@ run "root_module_subordinate_resources" {
       azapi_update_resource.configurations["work_mem"].body.properties.value == "64MB" &&
       azapi_update_resource.configurations["work_mem"].body.properties.source == "user-override"
     )
-    error_message = "Configurations must be updated using azapi_update_resource."
+    error_message = "Configurations must be declared as AzAPI update resources."
   }
 
   assert {
@@ -179,13 +179,12 @@ run "root_module_subordinate_resources" {
 
   assert {
     condition = (
-      length(azapi_update_resource.maintenance_window) == 1 &&
-      azapi_update_resource.maintenance_window[0].body.properties.maintenanceWindow.customWindow == "Enabled" &&
-      azapi_update_resource.maintenance_window[0].body.properties.maintenanceWindow.dayOfWeek == 1 &&
-      azapi_update_resource.maintenance_window[0].body.properties.maintenanceWindow.startHour == 2 &&
-      azapi_update_resource.maintenance_window[0].body.properties.maintenanceWindow.startMinute == 30
+      azapi_resource.this.body.properties.maintenanceWindow.customWindow == "Enabled" &&
+      azapi_resource.this.body.properties.maintenanceWindow.dayOfWeek == 1 &&
+      azapi_resource.this.body.properties.maintenanceWindow.startHour == 2 &&
+      azapi_resource.this.body.properties.maintenanceWindow.startMinute == 30
     )
-    error_message = "Maintenance window must be updated on the server using azapi_update_resource."
+    error_message = "Maintenance window must be configured on the server resource."
   }
 }
 

@@ -23,9 +23,12 @@ moved {
   to   = azapi_resource.administrators
 }
 
-moved {
+removed {
   from = azurerm_postgresql_flexible_server_configuration.this
-  to   = azapi_update_resource.configurations
+
+  lifecycle {
+    destroy = false
+  }
 }
 
 moved {

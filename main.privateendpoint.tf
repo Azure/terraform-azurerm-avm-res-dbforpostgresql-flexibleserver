@@ -175,7 +175,7 @@ data "azapi_resource_list" "private_endpoint_role_definitions" {
 }
 
 resource "random_uuid" "private_endpoint_role_assignment" {
-  for_each = local.private_endpoint_role_assignments
+  for_each = { for k, v in local.private_endpoint_role_assignments : k => v if(v.assignment.name == null || v.assignment.name == "") }
 
   keepers = {
     scope              = local.private_endpoint_resource_ids[each.value.pe_key]
@@ -187,7 +187,7 @@ resource "random_uuid" "private_endpoint_role_assignment" {
 resource "azapi_resource" "private_endpoint_role_assignments" {
   for_each = local.private_endpoint_role_assignments
 
-  name      = coalesce(each.value.assignment.name, random_uuid.private_endpoint_role_assignment[each.key].result)
+  name      = each.value.assignment.name != null ? each.value.assignment.name : random_uuid.private_endpoint_role_assignment[each.key].result
   parent_id = local.private_endpoint_resource_ids[each.value.pe_key]
   type      = var.resource_types.authorization_role_assignments
   body = {
@@ -223,6 +223,7 @@ resource "azapi_resource" "private_endpoint_role_assignments" {
   }
 
   lifecycle {
+    ignore_changes = [name]
     precondition {
       condition     = local.private_endpoint_role_definition_ids[each.key] != null
       error_message = "The role definition '${each.value.assignment.role_definition_id_or_name}' was not found at the private endpoint scope. Supply a role definition resource ID or an available role name."

@@ -25,6 +25,7 @@ resource "azapi_resource" "this" {
       storage                = local.storage_body
       backup                 = local.backup_body
       highAvailability       = local.ha_body
+      maintenanceWindow      = local.maintenance_body
       authConfig             = local.auth_body
       dataEncryption         = local.cmk_body
     }
@@ -46,7 +47,7 @@ resource "azapi_resource" "this" {
     "properties.sourceServerResourceId",
   ]
   response_export_values = ["properties.fullyQualifiedDomainName"]
-  retry                  = var.retry
+  retry                  = local.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -86,7 +87,7 @@ resource "azapi_resource" "locks" {
   }
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
   response_export_values = []
-  retry                  = var.retry
+  retry                  = local.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -105,6 +106,19 @@ resource "azapi_resource" "locks" {
       error_message = "The lock level must be one of: 'CanNotDelete', or 'ReadOnly'."
     }
   }
+
+  depends_on = [
+    azapi_resource.this,
+    azapi_resource.role_assignments,
+    azapi_resource.diagnostic_settings,
+    azapi_resource.administrators,
+    azapi_update_resource.configurations,
+    azapi_resource.virtual_endpoints,
+    azapi_resource.firewall_rules,
+    module.databases,
+    azapi_resource.private_endpoints_managed_dns_zone_groups,
+    azapi_resource.private_endpoints_unmanaged_dns_zone_groups,
+  ]
 }
 
 data "azapi_resource_list" "role_definitions" {
@@ -127,7 +141,7 @@ data "azapi_resource_list" "role_definitions" {
 }
 
 resource "random_uuid" "role_assignment" {
-  for_each = var.role_assignments
+  for_each = { for k, v in var.role_assignments : k => v if(v.name == null || v.name == "") && (v.role_assignment_name == null || v.role_assignment_name == "") }
 
   keepers = {
     scope              = azapi_resource.this.id
@@ -139,7 +153,7 @@ resource "random_uuid" "role_assignment" {
 resource "azapi_resource" "role_assignments" {
   for_each = var.role_assignments
 
-  name      = random_uuid.role_assignment[each.key].result
+  name      = each.value.name != null ? each.value.name : (each.value.role_assignment_name != null ? each.value.role_assignment_name : random_uuid.role_assignment[each.key].result)
   parent_id = azapi_resource.this.id
   type      = var.resource_types.authorization_role_assignments
   body = {
@@ -161,7 +175,7 @@ resource "azapi_resource" "role_assignments" {
     "properties.delegatedManagedIdentityResourceId",
   ]
   response_export_values = []
-  retry                  = var.retry
+  retry                  = local.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -175,6 +189,7 @@ resource "azapi_resource" "role_assignments" {
   }
 
   lifecycle {
+    ignore_changes = [name]
     precondition {
       condition     = local.role_definition_ids[each.key] != null
       error_message = "The role definition '${each.value.role_definition_id_or_name}' was not found at the server scope. Supply a role definition resource ID or an available role name."
@@ -214,7 +229,7 @@ resource "azapi_resource" "diagnostic_settings" {
   }
   ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
   response_export_values = []
-  retry                  = var.retry
+  retry                  = local.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -242,8 +257,9 @@ resource "azapi_resource" "administrators" {
     }
   }
   ignore_body_changes    = length(var.ignore_body_changes.dbforpostgresql_flexible_servers_administrators) > 0 ? var.ignore_body_changes.dbforpostgresql_flexible_servers_administrators : null
+  locks                  = [azapi_resource.this.id]
   response_export_values = []
-  retry                  = var.retry
+  retry                  = local.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -269,8 +285,9 @@ resource "azapi_update_resource" "configurations" {
       value  = each.value.config
     }
   }
+  locks                  = [azapi_resource.this.id]
   response_export_values = []
-  retry                  = var.retry
+  retry                  = local.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -297,33 +314,9 @@ resource "azapi_resource" "virtual_endpoints" {
     }
   }
   ignore_body_changes    = length(var.ignore_body_changes.dbforpostgresql_flexible_servers_virtual_endpoints) > 0 ? var.ignore_body_changes.dbforpostgresql_flexible_servers_virtual_endpoints : null
+  locks                  = [azapi_resource.this.id]
   response_export_values = []
-  retry                  = var.retry
-
-  dynamic "timeouts" {
-    for_each = var.timeouts == null ? [] : [var.timeouts]
-
-    content {
-      create = timeouts.value.create
-      delete = timeouts.value.delete
-      read   = timeouts.value.read
-      update = timeouts.value.update
-    }
-  }
-}
-
-resource "azapi_update_resource" "maintenance_window" {
-  count = var.maintenance_window == null ? 0 : 1
-
-  resource_id = azapi_resource.this.id
-  type        = var.resource_types.dbforpostgresql_flexible_servers
-  body = {
-    properties = {
-      maintenanceWindow = local.maintenance_body
-    }
-  }
-  response_export_values = []
-  retry                  = var.retry
+  retry                  = local.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

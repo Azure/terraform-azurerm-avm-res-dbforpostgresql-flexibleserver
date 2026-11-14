@@ -143,4 +143,14 @@ locals {
     )
   }
   role_definition_resource_substring = "/providers/Microsoft.Authorization/roleDefinitions"
+  default_retry = {
+    error_message_regex = [
+      "ServerIsBusy",
+      "Another operation is in progress",
+      "AadAuthOperationCannotBePerformedWhenServerIsNotAccessible",
+    ]
+    interval_seconds     = 10
+    max_interval_seconds = 60
+  }
+  retry = var.retry != null ? var.retry : local.default_retry
 }

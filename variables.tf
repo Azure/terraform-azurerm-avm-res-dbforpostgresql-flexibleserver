@@ -300,6 +300,8 @@ variable "role_assignments" {
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
     principal_type                         = optional(string, null)
+    name                                   = optional(string, null)
+    role_assignment_name                   = optional(string, null)
   }))
   default     = {}
   description = <<DESCRIPTION
@@ -311,6 +313,8 @@ A map of role assignments to create on this resource. The map key is deliberatel
 - `skip_service_principal_aad_check` - If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
 - `condition` - The condition which will be used to scope the role assignment.
 - `condition_version` - The version of the condition syntax. Valid values are '2.0'.
+- `name` - (Optional) The name of the role assignment. If not set, a random UUID will be generated.
+- `role_assignment_name` - (Optional) An alias for `name`.
 
 > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
 DESCRIPTION
@@ -362,6 +366,8 @@ variable "ignore_body_changes" {
     dbforpostgresql_flexible_servers = optional(list(string), [
       "properties.availabilityZone",
       "properties.highAvailability.standbyAvailabilityZone",
+      "properties.dataEncryption",
+      "properties.replicationRole",
     ])
     dbforpostgresql_flexible_servers_administrators    = optional(list(string), [])
     dbforpostgresql_flexible_servers_configurations    = optional(list(string), [])

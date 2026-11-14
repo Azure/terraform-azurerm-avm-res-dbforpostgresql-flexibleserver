@@ -11,8 +11,9 @@ resource "azapi_resource" "firewall_rules" {
     }
   }
   ignore_body_changes    = length(var.ignore_body_changes.dbforpostgresql_flexible_servers_firewall_rules) > 0 ? var.ignore_body_changes.dbforpostgresql_flexible_servers_firewall_rules : null
+  locks                  = [azapi_resource.this.id]
   response_export_values = []
-  retry                  = var.retry
+  retry                  = local.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
