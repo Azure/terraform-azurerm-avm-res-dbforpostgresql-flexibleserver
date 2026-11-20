@@ -4,6 +4,27 @@ This is a Terraform module for PostgreSQL Flexible Server in the style of Azure 
 
 Use the `modules/database` submodule when application teams need to manage databases separately from the server lifecycle.
 
+## Migration Guide (Upgrading from 0.2.x to AzAPI)
+
+This version replaces `hashicorp/azurerm` with `Azure/azapi` (`~> 2.12`) in compliance with AVM rule `TFFR3`.
+
+### Key Considerations for Consumers
+
+- **Provider Requirements:** Ensure your calling configuration includes `Azure/azapi ~> 2.12` and `hashicorp/random ~> 3.6`. You can remove `hashicorp/azurerm` unless required for resources outside this module.
+- **Terraform Version:** Requires Terraform `>= 1.11, < 2.0`.
+- **Zero-Destruction State Migration:** Declarative `moved` blocks automatically preserve existing state for:
+  - Primary Flexible Server (`azurerm_postgresql_flexible_server.this` -> `azapi_resource.this`)
+  - Server Configurations (`azurerm_postgresql_flexible_server_configuration.this` -> `azapi_resource.configurations`)
+  - Firewall Rules (`azurerm_postgresql_flexible_server_firewall_rule.this` -> `azapi_resource.firewall_rules`)
+  - Microsoft Entra ID Administrators (`azurerm_postgresql_flexible_server_active_directory_administrator.this` -> `azapi_resource.administrators`)
+  - Virtual Endpoints (`azurerm_postgresql_flexible_server_virtual_endpoint.this` -> `azapi_resource.virtual_endpoints`)
+  - Management Locks (`azurerm_management_lock.this` -> `azapi_resource.locks`)
+  - Role Assignments (`azurerm_role_assignment.this` -> `azapi_resource.role_assignments`)
+  - Diagnostic Settings (`azurerm_monitor_diagnostic_setting.this` -> `azapi_resource.diagnostic_settings`)
+  - Submodule Databases (`azurerm_postgresql_flexible_server_database.this` -> `azapi_resource.this`)
+- **Role Assignments with Management Locks:** If your server has an active `CanNotDelete` management lock, supply the existing role assignment UUID via `name` (or `role_assignment_name`) in `var.role_assignments` during upgrade so that Terraform updates the role assignment in-place without generating a new UUID that would require deletion.
+- **Server Configuration Retries:** Updating PostgreSQL server configurations via ARM requires serializing requests; the module includes an automatic retry policy to handle transient `ServerIsBusy` responses during multi-parameter updates.
+
 ## Encryption
 
 `customer_managed_key` accepts full primary and optional geo-backup key URIs, including versionless URIs. Its identity values are user-assigned identity ARM resource IDs, not client IDs; include each supplied identity in `managed_identities.user_assigned_resource_ids`. A geo-backup key and identity remain independent of the primary pair and must be in the backup region.
@@ -16,7 +37,7 @@ Endpoint `role_assignments` and `lock` settings are now applied; earlier version
 
 Endpoint resource addresses, `pe-${name}`/`pse-${name}` defaults, per-endpoint tags and DNS-management selection are unchanged. Omitted/null subresource and IP member names remain `postgresqlServer`. Explicit `subresource_name` or IP `member_name` values are now honored and can replace an endpoint when they differ from those historical defaults. Use only values supported by PostgreSQL Private Link.
 
-This AzureRM-based endpoint implementation still accepts a resource group **name**, not an ARM ID, and defaults `location` to the module's `location`. Tags are not inherited from the server. Endpoint role assignments use AzAPI: it performs no AzureRM directory preflight, so `skip_service_principal_aad_check` is accepted for interface compatibility but has no effect for either value. Set `principal_type` explicitly when required. Role definition lookup requires read access at the endpoint scope.
+This AzAPI-based endpoint implementation accepts a resource group **name**, not an ARM ID, and defaults `location` to the module's `location`. Tags are not inherited from the server. Endpoint role assignments use AzAPI: it performs no AzureRM directory preflight, so `skip_service_principal_aad_check` is accepted for interface compatibility but has no effect for either value. Set `principal_type` explicitly when required. Role definition lookup requires read access at the endpoint scope.
 
 > [!IMPORTANT]
 > As the overall AVM framework is not GA (generally available) yet - the CI framework and test automation is not fully functional and implemented across all supported languages yet - breaking changes are expected, and additional customer feedback is yet to be gathered and incorporated. Hence, modules **MUST NOT** be published at version `1.0.0` or higher at this time.

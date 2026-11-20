@@ -1,15 +1,13 @@
-mock_provider "azurerm" {
-  mock_resource "azurerm_postgresql_flexible_server" {
-    defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.DBforPostgreSQL/flexibleServers/test-flex"
-    }
-  }
-}
-
 mock_provider "azapi" {
   mock_data "azapi_client_config" {
     defaults = {
       subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
+
+  mock_resource "azapi_resource" {
+    defaults = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.DBforPostgreSQL/flexibleServers/test-flex"
     }
   }
 }
@@ -29,16 +27,14 @@ run "encryption_and_identities_are_absent_by_default" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
   assert {
     condition = (
-      length(azurerm_postgresql_flexible_server.this.customer_managed_key) == 0 &&
-      length(azurerm_postgresql_flexible_server.this.identity) == 0
+      azapi_resource.this.body.properties.dataEncryption == null &&
+      azapi_resource.this.body.identity == null
     )
     error_message = "Omitted encryption and identities must not create encryption or identity blocks."
   }
@@ -48,9 +44,7 @@ run "explicit_null_encryption_preserves_absence" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -61,8 +55,8 @@ run "explicit_null_encryption_preserves_absence" {
 
   assert {
     condition = (
-      length(azurerm_postgresql_flexible_server.this.customer_managed_key) == 0 &&
-      length(azurerm_postgresql_flexible_server.this.identity) == 0
+      azapi_resource.this.body.properties.dataEncryption == null &&
+      azapi_resource.this.body.identity == null
     )
     error_message = "Explicit nulls must retain the original no-encryption, no-identity defaults."
   }
@@ -72,9 +66,7 @@ run "primary_key_uri_and_identity_arm_id_are_preserved" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -90,12 +82,13 @@ run "primary_key_uri_and_identity_arm_id_are_preserved" {
 
   assert {
     condition = (
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).key_vault_key_id == var.customer_managed_key.key_vault_key_id &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).primary_user_assigned_identity_id == var.customer_managed_key.primary_user_assigned_identity_id &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).geo_backup_key_vault_key_id == null &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).geo_backup_user_assigned_identity_id == null &&
-      one(azurerm_postgresql_flexible_server.this.identity).type == "UserAssigned" &&
-      toset(one(azurerm_postgresql_flexible_server.this.identity).identity_ids) == var.managed_identities.user_assigned_resource_ids
+      azapi_resource.this.body.properties.dataEncryption.type == "AzureKeyVault" &&
+      azapi_resource.this.body.properties.dataEncryption.primaryKeyURI == var.customer_managed_key.key_vault_key_id &&
+      azapi_resource.this.body.properties.dataEncryption.primaryUserAssignedIdentityId == var.customer_managed_key.primary_user_assigned_identity_id &&
+      azapi_resource.this.body.properties.dataEncryption.geoBackupKeyURI == null &&
+      azapi_resource.this.body.properties.dataEncryption.geoBackupUserAssignedIdentityId == null &&
+      azapi_resource.this.body.identity.type == "UserAssigned" &&
+      toset(keys(azapi_resource.this.body.identity.userAssignedIdentities)) == var.managed_identities.user_assigned_resource_ids
     )
     error_message = "Primary key URI and identity ARM ID must pass through unchanged without creating geo-backup settings."
   }
@@ -105,9 +98,7 @@ run "geo_backup_key_and_identity_are_independent" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -130,12 +121,13 @@ run "geo_backup_key_and_identity_are_independent" {
 
   assert {
     condition = (
-      azurerm_postgresql_flexible_server.this.geo_redundant_backup_enabled &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).key_vault_key_id == var.customer_managed_key.key_vault_key_id &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).primary_user_assigned_identity_id == var.customer_managed_key.primary_user_assigned_identity_id &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).geo_backup_key_vault_key_id == var.customer_managed_key.geo_backup_key_vault_key_id &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).geo_backup_user_assigned_identity_id == var.customer_managed_key.geo_backup_user_assigned_identity_id &&
-      toset(one(azurerm_postgresql_flexible_server.this.identity).identity_ids) == var.managed_identities.user_assigned_resource_ids
+      azapi_resource.this.body.properties.backup.geoRedundantBackup == "Enabled" &&
+      azapi_resource.this.body.properties.dataEncryption.type == "AzureKeyVault" &&
+      azapi_resource.this.body.properties.dataEncryption.primaryKeyURI == var.customer_managed_key.key_vault_key_id &&
+      azapi_resource.this.body.properties.dataEncryption.primaryUserAssignedIdentityId == var.customer_managed_key.primary_user_assigned_identity_id &&
+      azapi_resource.this.body.properties.dataEncryption.geoBackupKeyURI == var.customer_managed_key.geo_backup_key_vault_key_id &&
+      azapi_resource.this.body.properties.dataEncryption.geoBackupUserAssignedIdentityId == var.customer_managed_key.geo_backup_user_assigned_identity_id &&
+      toset(keys(azapi_resource.this.body.identity.userAssignedIdentities)) == var.managed_identities.user_assigned_resource_ids
     )
     error_message = "Distinct primary and geo-backup keys and identities, including unrelated assigned identities, must not be dropped, swapped or converted to client IDs."
   }
@@ -145,9 +137,7 @@ run "versionless_sovereign_key_uris_are_not_reconstructed" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -170,12 +160,13 @@ run "versionless_sovereign_key_uris_are_not_reconstructed" {
 
   assert {
     condition = (
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).key_vault_key_id == "https://primary.vault.azure.cn/keys/postgres" &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).geo_backup_key_vault_key_id == "https://backup.vault.azure.cn/keys/postgres-backup" &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).primary_user_assigned_identity_id == var.customer_managed_key.primary_user_assigned_identity_id &&
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).geo_backup_user_assigned_identity_id == var.customer_managed_key.geo_backup_user_assigned_identity_id &&
-      one(azurerm_postgresql_flexible_server.this.identity).type == "SystemAssigned, UserAssigned" &&
-      toset(one(azurerm_postgresql_flexible_server.this.identity).identity_ids) == var.managed_identities.user_assigned_resource_ids
+      azapi_resource.this.body.properties.dataEncryption.type == "AzureKeyVault" &&
+      azapi_resource.this.body.properties.dataEncryption.primaryKeyURI == "https://primary.vault.azure.cn/keys/postgres" &&
+      azapi_resource.this.body.properties.dataEncryption.geoBackupKeyURI == "https://backup.vault.azure.cn/keys/postgres-backup" &&
+      azapi_resource.this.body.properties.dataEncryption.primaryUserAssignedIdentityId == var.customer_managed_key.primary_user_assigned_identity_id &&
+      azapi_resource.this.body.properties.dataEncryption.geoBackupUserAssignedIdentityId == var.customer_managed_key.geo_backup_user_assigned_identity_id &&
+      azapi_resource.this.body.identity.type == "SystemAssigned, UserAssigned" &&
+      toset(keys(azapi_resource.this.body.identity.userAssignedIdentities)) == var.managed_identities.user_assigned_resource_ids
     )
     error_message = "Versionless key URIs, sovereign hosts and the combined identity type must be retained exactly."
   }
@@ -185,9 +176,7 @@ run "identity_membership_is_case_insensitive_without_rewriting_ids" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -203,8 +192,8 @@ run "identity_membership_is_case_insensitive_without_rewriting_ids" {
 
   assert {
     condition = (
-      one(azurerm_postgresql_flexible_server.this.customer_managed_key).primary_user_assigned_identity_id == var.customer_managed_key.primary_user_assigned_identity_id &&
-      toset(one(azurerm_postgresql_flexible_server.this.identity).identity_ids) == var.managed_identities.user_assigned_resource_ids
+      azapi_resource.this.body.properties.dataEncryption.primaryUserAssignedIdentityId == var.customer_managed_key.primary_user_assigned_identity_id &&
+      toset(keys(azapi_resource.this.body.identity.userAssignedIdentities)) == var.managed_identities.user_assigned_resource_ids
     )
     error_message = "ARM ID membership checks must be case-insensitive without changing either caller-supplied ID."
   }
@@ -214,9 +203,7 @@ run "system_assigned_identity_without_encryption_is_preserved" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -226,8 +213,8 @@ run "system_assigned_identity_without_encryption_is_preserved" {
 
   assert {
     condition = (
-      one(azurerm_postgresql_flexible_server.this.identity).type == "SystemAssigned" &&
-      length(azurerm_postgresql_flexible_server.this.customer_managed_key) == 0
+      azapi_resource.this.body.identity.type == "SystemAssigned" &&
+      azapi_resource.this.body.properties.dataEncryption == null
     )
     error_message = "The existing system-assigned identity capability must not depend on configuring encryption."
   }
@@ -237,9 +224,7 @@ run "primary_identity_client_id_is_rejected" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -257,9 +242,7 @@ run "geo_backup_identity_client_id_is_rejected" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -278,9 +261,7 @@ run "primary_key_arm_id_is_rejected" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -297,9 +278,7 @@ run "geo_backup_secret_uri_is_rejected" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -317,9 +296,7 @@ run "managed_identity_client_id_is_rejected" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -334,9 +311,7 @@ run "unassigned_primary_identity_is_rejected" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -350,16 +325,14 @@ run "unassigned_primary_identity_is_rejected" {
     }
   }
 
-  expect_failures = [azurerm_postgresql_flexible_server.this]
+  expect_failures = [azapi_resource.this]
 }
 
 run "unassigned_geo_backup_identity_is_rejected" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -375,5 +348,5 @@ run "unassigned_geo_backup_identity_is_rejected" {
     }
   }
 
-  expect_failures = [azurerm_postgresql_flexible_server.this]
+  expect_failures = [azapi_resource.this]
 }

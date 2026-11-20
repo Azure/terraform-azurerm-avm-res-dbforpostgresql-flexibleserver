@@ -1,14 +1,14 @@
 output "id" {
   description = "The resource ID of the PostgreSQL database."
-  value       = azurerm_postgresql_flexible_server_database.this.id
+  value       = azapi_resource.this.id
 }
 
 output "name" {
   description = "The name of the PostgreSQL database."
-  value       = azurerm_postgresql_flexible_server_database.this.name
+  value       = azapi_resource.this.name
 }
 
 output "resource_id" {
   description = "The resource ID of the PostgreSQL database."
-  value       = azurerm_postgresql_flexible_server_database.this.id
+  value       = azapi_resource.this.id
 }

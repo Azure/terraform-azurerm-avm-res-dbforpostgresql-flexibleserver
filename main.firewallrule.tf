@@ -1,8 +1,28 @@
-resource "azurerm_postgresql_flexible_server_firewall_rule" "this" {
+resource "azapi_resource" "firewall_rules" {
   for_each = var.firewall_rules
 
-  end_ip_address   = each.value.end_ip_address
-  name             = each.value.name
-  server_id        = azurerm_postgresql_flexible_server.this.id
-  start_ip_address = each.value.start_ip_address
+  name      = each.value.name
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.dbforpostgresql_flexible_servers_firewall_rules
+  body = {
+    properties = {
+      endIpAddress   = each.value.end_ip_address
+      startIpAddress = each.value.start_ip_address
+    }
+  }
+  ignore_body_changes    = length(var.ignore_body_changes.dbforpostgresql_flexible_servers_firewall_rules) > 0 ? var.ignore_body_changes.dbforpostgresql_flexible_servers_firewall_rules : null
+  locks                  = [azapi_resource.this.id]
+  response_export_values = []
+  retry                  = local.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }

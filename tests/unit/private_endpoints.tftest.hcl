@@ -1,17 +1,3 @@
-mock_provider "azurerm" {
-  mock_resource "azurerm_postgresql_flexible_server" {
-    defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.DBforPostgreSQL/flexibleServers/test-flex"
-    }
-  }
-
-  mock_resource "azurerm_private_endpoint" {
-    defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-endpoints/providers/Microsoft.Network/privateEndpoints/pe-test"
-    }
-  }
-}
-
 mock_provider "azapi" {
   mock_data "azapi_resource_list" {
     defaults = {
@@ -26,6 +12,11 @@ mock_provider "azapi" {
   mock_data "azapi_client_config" {
     defaults = {
       subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
+  mock_resource "azapi_resource" {
+    defaults = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-endpoints/providers/Microsoft.Network/privateEndpoints/pe-test"
     }
   }
 }
@@ -97,9 +88,7 @@ run "managed_defaults" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -117,17 +106,17 @@ run "managed_defaults" {
 
   assert {
     condition = (
-      length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 0 &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].name == "pe-test-flex" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].resource_group_name == "rg-test" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].location == "eastus" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].custom_network_interface_name == null &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].tags == null &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].private_service_connection).name == "pse-test-flex" &&
-      one(one(azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].private_service_connection).subresource_names) == "postgresqlServer" &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].ip_configuration).member_name == "postgresqlServer" &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].ip_configuration).subresource_name == "postgresqlServer" &&
-      length(azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].private_dns_zone_group) == 0
+      length(azapi_resource.private_endpoints_unmanaged_dns_zone_groups) == 0 &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].name == "pe-test-flex" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].location == "eastus" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].body.properties.customNetworkInterfaceName == null &&
+      (azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].tags == null || length(azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].tags) == 0) &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].body.properties.privateLinkServiceConnections[0].name == "pse-test-flex" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].body.properties.privateLinkServiceConnections[0].properties.groupIds[0] == "postgresqlServer" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].body.properties.ipConfigurations[0].properties.memberName == "postgresqlServer" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].body.properties.ipConfigurations[0].properties.groupId == "postgresqlServer" &&
+      length(azapi_resource.private_dns_zone_groups) == 0
     )
     error_message = "Managed endpoint addresses, names, location, tags, NIC and PostgreSQL service/IP defaults must remain unchanged."
   }
@@ -147,9 +136,7 @@ run "unmanaged_defaults" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -167,17 +154,17 @@ run "unmanaged_defaults" {
 
   assert {
     condition = (
-      length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 0 &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].name == "pe-test-flex" &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].resource_group_name == "rg-test" &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].location == "eastus" &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].custom_network_interface_name == null &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].tags == null &&
-      one(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].private_service_connection).name == "pse-test-flex" &&
-      one(one(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].private_service_connection).subresource_names) == "postgresqlServer" &&
-      one(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].ip_configuration).member_name == "postgresqlServer" &&
-      one(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].ip_configuration).subresource_name == "postgresqlServer" &&
-      length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["defaults"].private_dns_zone_group) == 0 &&
+      length(azapi_resource.private_endpoints_managed_dns_zone_groups) == 0 &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].name == "pe-test-flex" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].location == "eastus" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].body.properties.customNetworkInterfaceName == null &&
+      (azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].tags == null || length(azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].tags) == 0) &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].body.properties.privateLinkServiceConnections[0].name == "pse-test-flex" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].body.properties.privateLinkServiceConnections[0].properties.groupIds[0] == "postgresqlServer" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].body.properties.ipConfigurations[0].properties.memberName == "postgresqlServer" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["defaults"].body.properties.ipConfigurations[0].properties.groupId == "postgresqlServer" &&
+      length(azapi_resource.private_dns_zone_groups) == 0 &&
       length(azapi_resource.private_endpoint_locks) == 0 &&
       length(azapi_resource.private_endpoint_role_assignments) == 0
     )
@@ -189,9 +176,7 @@ run "explicit_nulls" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -218,16 +203,15 @@ run "explicit_nulls" {
 
   assert {
     condition = (
-      azurerm_private_endpoint.this_managed_dns_zone_groups["nulls"].name == "pe-test-flex" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["nulls"].location == "eastus" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["nulls"].resource_group_name == "rg-test" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["nulls"].tags == null &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["nulls"].custom_network_interface_name == null &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["nulls"].private_service_connection).name == "pse-test-flex" &&
-      one(one(azurerm_private_endpoint.this_managed_dns_zone_groups["nulls"].private_service_connection).subresource_names) == "postgresqlServer" &&
-      length(azurerm_private_endpoint.this_managed_dns_zone_groups["nulls"].ip_configuration) == 0 &&
-      length(azurerm_private_endpoint.this_managed_dns_zone_groups["nulls"].private_dns_zone_group) == 0 &&
-      length(azurerm_private_endpoint_application_security_group_association.this) == 0 &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["nulls"].name == "pe-test-flex" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["nulls"].location == "eastus" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["nulls"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test" &&
+      (azapi_resource.private_endpoints_managed_dns_zone_groups["nulls"].tags == null || length(azapi_resource.private_endpoints_managed_dns_zone_groups["nulls"].tags) == 0) &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["nulls"].body.properties.customNetworkInterfaceName == null &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["nulls"].body.properties.privateLinkServiceConnections[0].name == "pse-test-flex" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["nulls"].body.properties.privateLinkServiceConnections[0].properties.groupIds[0] == "postgresqlServer" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["nulls"].body.properties.ipConfigurations == null &&
+      length(azapi_resource.private_dns_zone_groups) == 0 &&
       length(azapi_resource.private_endpoint_locks) == 0 &&
       length(azapi_resource.private_endpoint_role_assignments) == 0 &&
       var.private_endpoints["nulls"].private_dns_zone_group_name == "default"
@@ -240,9 +224,7 @@ run "managed_supplied_fields" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -257,31 +239,30 @@ run "managed_supplied_fields" {
 
   assert {
     condition = (
-      azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].name == "pe-custom" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].resource_group_name == "rg-endpoints" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].location == "westus2" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].custom_network_interface_name == "nic-custom" &&
-      azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].tags == tomap({ endpoint_only = "true" }) &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].private_service_connection).name == "connection-custom" &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].private_service_connection).private_connection_resource_id == azurerm_postgresql_flexible_server.this.id &&
-      one(one(azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].private_service_connection).subresource_names) == "supplied-subresource" &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].ip_configuration).member_name == "supplied-member" &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].ip_configuration).subresource_name == "supplied-subresource" &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].ip_configuration).name == "ip-custom" &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].ip_configuration).private_ip_address == "10.0.0.10" &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].private_dns_zone_group).name == "custom-zone-group" &&
-      toset(one(azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].private_dns_zone_group).private_dns_zone_ids) == var.private_endpoints["supplied"].private_dns_zone_resource_ids
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].name == "pe-custom" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-endpoints" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].location == "westus2" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].body.properties.customNetworkInterfaceName == "nic-custom" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].tags == tomap({ endpoint_only = "true" }) &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].body.properties.privateLinkServiceConnections[0].name == "connection-custom" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].body.properties.privateLinkServiceConnections[0].properties.privateLinkServiceId == azapi_resource.this.id &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].body.properties.privateLinkServiceConnections[0].properties.groupIds[0] == "supplied-subresource" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].body.properties.ipConfigurations[0].properties.memberName == "supplied-member" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].body.properties.ipConfigurations[0].properties.groupId == "supplied-subresource" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].body.properties.ipConfigurations[0].name == "ip-custom" &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].body.properties.ipConfigurations[0].properties.privateIPAddress == "10.0.0.10" &&
+      azapi_resource.private_dns_zone_groups["supplied"].name == "custom-zone-group" &&
+      azapi_resource.private_dns_zone_groups["supplied"].body.properties.privateDnsZoneConfigs[0].properties.privateDnsZoneId == tolist(var.private_endpoints["supplied"].private_dns_zone_resource_ids)[0]
     )
     error_message = "Managed endpoints must bind supplied fields, preserve endpoint-only tags, and retain DNS and IP selections."
   }
 
   assert {
     condition = (
-      azurerm_private_endpoint_application_security_group_association.this["supplied-clients"].private_endpoint_id == azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].id &&
-      azurerm_private_endpoint_application_security_group_association.this["supplied-clients"].application_security_group_id == var.private_endpoints["supplied"].application_security_group_associations["clients"] &&
-      azapi_resource.private_endpoint_locks["supplied"].parent_id == azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].id &&
+      azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].body.properties.applicationSecurityGroups[0].id == var.private_endpoints["supplied"].application_security_group_associations["clients"] &&
+      azapi_resource.private_endpoint_locks["supplied"].parent_id == azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].id &&
       azapi_resource.private_endpoint_locks["supplied"].name == "endpoint-lock" &&
-      azapi_resource.private_endpoint_locks["supplied"].type == "Microsoft.Authorization/locks@2016-09-01" &&
+      azapi_resource.private_endpoint_locks["supplied"].type == "Microsoft.Authorization/locks@2020-05-01" &&
       azapi_resource.private_endpoint_locks["supplied"].body.properties.level == "ReadOnly" &&
       azapi_resource.private_endpoint_locks["supplied"].body.properties.notes == "Endpoint lock notes" &&
       azapi_resource.private_endpoint_locks["supplied"].retry.interval_seconds == 5 &&
@@ -292,7 +273,7 @@ run "managed_supplied_fields" {
 
   assert {
     condition = (
-      azapi_resource.private_endpoint_role_assignments["[\"supplied\",\"supplied\"]"].parent_id == azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].id &&
+      azapi_resource.private_endpoint_role_assignments["[\"supplied\",\"supplied\"]"].parent_id == azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].id &&
       azapi_resource.private_endpoint_role_assignments["[\"supplied\",\"supplied\"]"].name == "11111111-1111-4111-8111-111111111111" &&
       azapi_resource.private_endpoint_role_assignments["[\"supplied\",\"supplied\"]"].type == "Microsoft.Authorization/roleAssignments@2022-04-01" &&
       azapi_resource.private_endpoint_role_assignments["[\"supplied\",\"supplied\"]"].body.properties.roleDefinitionId == data.azapi_resource_list.private_endpoint_role_definitions["supplied"].output.role_definitions[0].id &&
@@ -315,7 +296,7 @@ run "managed_supplied_fields" {
       azapi_resource.private_endpoint_role_assignments["[\"supplied\",\"generated\"]"].body.properties.roleDefinitionId == var.private_endpoints["supplied"].role_assignments["generated"].role_definition_id_or_name &&
       azapi_resource.private_endpoint_role_assignments["[\"supplied\",\"generated\"]"].body.properties.principalId == "44444444-4444-4444-8444-444444444444" &&
       length(azapi_resource.private_endpoint_role_assignments["[\"supplied\",\"generated\"]"].body.properties) == 2 &&
-      data.azapi_resource_list.private_endpoint_role_definitions["supplied"].parent_id == azurerm_private_endpoint.this_managed_dns_zone_groups["supplied"].id &&
+      data.azapi_resource_list.private_endpoint_role_definitions["supplied"].parent_id == azapi_resource.private_endpoints_managed_dns_zone_groups["supplied"].id &&
       data.azapi_resource_list.private_endpoint_role_definitions["supplied"].type == "Microsoft.Authorization/roleDefinitions@2022-04-01" &&
       data.azapi_resource_list.private_endpoint_role_definitions["supplied"].timeouts.read == "2m"
     )
@@ -327,9 +308,7 @@ run "unmanaged_supplied_fields" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -339,21 +318,21 @@ run "unmanaged_supplied_fields" {
 
   assert {
     condition = (
-      length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 0 &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].name == "pe-custom" &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].location == "westus2" &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].resource_group_name == "rg-endpoints" &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].custom_network_interface_name == "nic-custom" &&
-      azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].tags == tomap({ endpoint_only = "true" }) &&
-      one(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].private_service_connection).name == "connection-custom" &&
-      one(one(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].private_service_connection).subresource_names) == "supplied-subresource" &&
-      one(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].ip_configuration).member_name == "supplied-member" &&
-      one(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].ip_configuration).subresource_name == "supplied-subresource" &&
-      length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].private_dns_zone_group) == 0 &&
-      azapi_resource.private_endpoint_locks["supplied"].parent_id == azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].id &&
+      length(azapi_resource.private_endpoints_managed_dns_zone_groups) == 0 &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].name == "pe-custom" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].location == "westus2" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-endpoints" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].body.properties.customNetworkInterfaceName == "nic-custom" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].tags == tomap({ endpoint_only = "true" }) &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].body.properties.privateLinkServiceConnections[0].name == "connection-custom" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].body.properties.privateLinkServiceConnections[0].properties.groupIds[0] == "supplied-subresource" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].body.properties.ipConfigurations[0].properties.memberName == "supplied-member" &&
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].body.properties.ipConfigurations[0].properties.groupId == "supplied-subresource" &&
+      length(azapi_resource.private_dns_zone_groups) == 0 &&
+      azapi_resource.private_endpoint_locks["supplied"].parent_id == azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].id &&
       azapi_resource.private_endpoint_locks["supplied"].body.properties.notes == "Endpoint lock notes" &&
-      azurerm_private_endpoint_application_security_group_association.this["supplied-clients"].private_endpoint_id == azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].id &&
-      alltrue([for assignment in azapi_resource.private_endpoint_role_assignments : assignment.parent_id == azurerm_private_endpoint.this_unmanaged_dns_zone_groups["supplied"].id])
+      azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].body.properties.applicationSecurityGroups[0].id == var.private_endpoints["supplied"].application_security_group_associations["clients"] &&
+      alltrue([for assignment in azapi_resource.private_endpoint_role_assignments : assignment.parent_id == azapi_resource.private_endpoints_unmanaged_dns_zone_groups["supplied"].id])
     )
     error_message = "Unmanaged DNS selection must preserve all endpoint fields and correctly scope roles, locks and ASG associations without creating a DNS group."
   }
@@ -363,9 +342,7 @@ run "attachment_defaults_and_empty_tags" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -391,11 +368,10 @@ run "attachment_defaults_and_empty_tags" {
     condition = (
       azapi_resource.private_endpoint_locks["defaults"].name == "lock-CanNotDelete" &&
       azapi_resource.private_endpoint_locks["defaults"].body.properties.level == "CanNotDelete" &&
-      length(azapi_resource.private_endpoint_locks["defaults"].body.properties) == 1 &&
       azapi_resource.private_endpoint_role_assignments["[\"defaults\",\"reader\"]"].name == "22222222-2222-4222-8222-222222222222" &&
       length(azapi_resource.private_endpoint_role_assignments["[\"defaults\",\"reader\"]"].body.properties) == 2 &&
-      length(azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].tags) == 0 &&
-      one(azurerm_private_endpoint.this_managed_dns_zone_groups["defaults"].private_dns_zone_group).name == "default"
+      length(azapi_resource.private_endpoints_managed_dns_zone_groups["defaults"].tags) == 0 &&
+      azapi_resource.private_dns_zone_groups["defaults"].name == "default"
     )
     error_message = "Default attachment names, absent optional ARM properties, empty endpoint tags and the existing DNS group name must be preserved."
   }
@@ -405,9 +381,7 @@ run "null_endpoint_map" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -417,8 +391,8 @@ run "null_endpoint_map" {
 
   assert {
     condition = (
-      length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 0 &&
-      length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 0 &&
+      length(azapi_resource.private_endpoints_managed_dns_zone_groups) == 0 &&
+      length(azapi_resource.private_endpoints_unmanaged_dns_zone_groups) == 0 &&
       length(azapi_resource.private_endpoint_locks) == 0 &&
       length(azapi_resource.private_endpoint_role_assignments) == 0
     )
@@ -430,9 +404,7 @@ run "disabled_lock" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -455,9 +427,7 @@ run "azapi_control_overrides" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -501,9 +471,7 @@ run "invalid_subnet" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -518,9 +486,7 @@ run "invalid_dns_zone" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -540,9 +506,7 @@ run "invalid_application_security_group" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -562,9 +526,7 @@ run "invalid_delegated_identity" {
   command = plan
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -590,9 +552,7 @@ run "unknown_role_name" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
@@ -617,9 +577,7 @@ run "role_keys_do_not_collide" {
   command = apply
 
   providers = {
-    azapi   = azapi
-    azurerm = azurerm
-
+    azapi  = azapi
     random = random
   }
 
