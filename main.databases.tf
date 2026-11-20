@@ -9,6 +9,10 @@ module "databases" {
   enable_telemetry = var.enable_telemetry
   location         = var.location
   timeouts         = each.value.timeouts
+
+  # Entra authentication must be enabled before user databases are created so that Entra
+  # principals can own them: https://learn.microsoft.com/azure/postgresql/security/security-entra-concepts
+  depends_on = [azurerm_postgresql_flexible_server_active_directory_administrator.this]
 }
 
 moved {
