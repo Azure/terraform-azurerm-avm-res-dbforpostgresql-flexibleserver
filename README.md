@@ -6,9 +6,9 @@ This is a Terraform module for PostgreSQL Flexible Server in the style of Azure 
 
 Use the `modules/database` submodule when application teams need to manage databases separately from the server lifecycle.
 
-## AzureRM 5 compatibility
+## AzureRM 4.x and 5.x compatibility
 
-This fork requires AzureRM 5.x. AzureRM 5 no longer registers resource providers by default; ensure the required Azure resource providers are registered in the subscription, or configure registration in the calling provider. Diagnostic metric categories are passed to AzureRM's `enabled_metric` blocks.
+This fork supports AzureRM 4.12 and later in the 4.x and 5.x major versions. AzureRM 5 no longer registers resource providers by default; ensure the required Azure resource providers are registered in the subscription, or configure registration in the calling provider. Diagnostic metric categories are passed to AzureRM's `enabled_metric` blocks.
 
 ## Encryption
 
@@ -40,7 +40,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 5.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.12, < 6.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
