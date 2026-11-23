@@ -107,3 +107,21 @@ run "database_submodule_can_be_used_directly" {
     error_message = "The database submodule should expose the database resource ID when used directly."
   }
 }
+
+run "diagnostic_metric_categories_are_enabled" {
+  command = plan
+
+  variables {
+    diagnostic_settings = {
+      example = {
+        workspace_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.OperationalInsights/workspaces/test"
+        metric_categories     = ["AllMetrics"]
+      }
+    }
+  }
+
+  assert {
+    condition     = toset([for metric in azurerm_monitor_diagnostic_setting.this["example"].enabled_metric : metric.category]) == toset(["AllMetrics"])
+    error_message = "Diagnostic metric categories must be enabled."
+  }
+}

@@ -4,6 +4,10 @@ This is a Terraform module for PostgreSQL Flexible Server in the style of Azure 
 
 Use the `modules/database` submodule when application teams need to manage databases separately from the server lifecycle.
 
+## AzureRM 5 compatibility
+
+This fork requires AzureRM 5.x. AzureRM 5 no longer registers resource providers by default; ensure the required Azure resource providers are registered in the subscription, or configure registration in the calling provider. Diagnostic metric categories are passed to AzureRM's `enabled_metric` blocks.
+
 ## Encryption
 
 `customer_managed_key` accepts full primary and optional geo-backup key URIs, including versionless URIs. Its identity values are user-assigned identity ARM resource IDs, not client IDs; include each supplied identity in `managed_identities.user_assigned_resource_ids`. A geo-backup key and identity remain independent of the primary pair and must be in the backup region.
