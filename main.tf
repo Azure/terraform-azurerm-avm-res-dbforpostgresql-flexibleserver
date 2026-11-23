@@ -1,76 +1,53 @@
-resource "azurerm_postgresql_flexible_server" "this" {
-  location                          = var.location
-  name                              = var.name
-  resource_group_name               = var.resource_group_name
-  administrator_login               = var.administrator_login
-  administrator_password            = var.administrator_password
-  administrator_password_wo         = var.administrator_password_wo
-  administrator_password_wo_version = var.administrator_password_wo_version
-  auto_grow_enabled                 = var.auto_grow_enabled
-  backup_retention_days             = var.backup_retention_days
-  create_mode                       = var.create_mode
-  delegated_subnet_id               = var.delegated_subnet_id
-  geo_redundant_backup_enabled      = var.geo_redundant_backup_enabled
-  point_in_time_restore_time_in_utc = var.point_in_time_restore_time_in_utc
-  private_dns_zone_id               = var.private_dns_zone_id
-  public_network_access_enabled     = var.public_network_access_enabled
-  replication_role                  = var.replication_role
-  sku_name                          = var.sku_name
-  source_server_id                  = var.source_server_id
-  storage_mb                        = var.storage_mb
-  storage_tier                      = var.storage_tier
-  tags                              = var.tags
-  version                           = var.server_version
-  zone                              = var.zone
+data "azapi_client_config" "current" {}
 
-  dynamic "authentication" {
-    for_each = var.authentication == null ? [] : [var.authentication]
+resource "azapi_resource" "this" {
+  type      = var.resource_types.dbforpostgresql_flexible_servers
+  name      = var.name
+  parent_id = "${data.azapi_client_config.current.subscription_resource_id}/resourceGroups/${var.resource_group_name}"
+  location  = var.location
+  tags      = var.tags
 
-    content {
-      active_directory_auth_enabled = authentication.value.active_directory_auth_enabled
-      password_auth_enabled         = authentication.value.password_auth_enabled
-      tenant_id                     = authentication.value.tenant_id
+  body = {
+    sku = var.sku_name == null ? null : {
+      name = local.sku_name
+      tier = local.sku_tier
+    }
+    identity = local.managed_identity_body
+    properties = {
+      version                = var.server_version != null ? tostring(var.server_version) : null
+      administratorLogin     = var.administrator_login
+      createMode             = var.create_mode
+      sourceServerResourceId = var.source_server_id
+      pointInTimeUTC         = var.point_in_time_restore_time_in_utc
+      availabilityZone       = var.zone
+      replicationRole        = var.replication_role
+      network                = local.network_body
+      storage                = local.storage_body
+      backup                 = local.backup_body
+      highAvailability       = local.ha_body
+      maintenanceWindow      = local.maintenance_body
+      authConfig             = local.auth_body
+      dataEncryption         = local.cmk_body
     }
   }
-
-  dynamic "customer_managed_key" {
-    for_each = var.customer_managed_key == null ? [] : [var.customer_managed_key]
-
-    content {
-      key_vault_key_id                     = customer_managed_key.value.key_vault_key_id
-      geo_backup_key_vault_key_id          = customer_managed_key.value.geo_backup_key_vault_key_id
-      geo_backup_user_assigned_identity_id = customer_managed_key.value.geo_backup_user_assigned_identity_id
-      primary_user_assigned_identity_id    = customer_managed_key.value.primary_user_assigned_identity_id
+  sensitive_body = (var.administrator_password != null || var.administrator_password_wo != null) ? {
+    properties = {
+      administratorLoginPassword = coalesce(var.administrator_password, var.administrator_password_wo)
     }
-  }
+  } : null
+  sensitive_body_version = var.administrator_password_wo_version != null ? {
+    "properties.administratorLoginPassword" = tostring(var.administrator_password_wo_version)
+  } : null
 
-  dynamic "high_availability" {
-    for_each = var.high_availability == null ? [] : [var.high_availability]
-
-    content {
-      mode                      = high_availability.value.mode
-      standby_availability_zone = high_availability.value.standby_availability_zone
-    }
-  }
-
-  dynamic "identity" {
-    for_each = local.managed_identities.system_assigned_user_assigned
-
-    content {
-      type         = identity.value.type
-      identity_ids = identity.value.user_assigned_resource_ids
-    }
-  }
-
-  dynamic "maintenance_window" {
-    for_each = var.maintenance_window == null ? [] : [var.maintenance_window]
-
-    content {
-      day_of_week  = maintenance_window.value.day_of_week
-      start_hour   = maintenance_window.value.start_hour
-      start_minute = maintenance_window.value.start_minute
-    }
-  }
+  ignore_body_changes = length(var.ignore_body_changes.dbforpostgresql_flexible_servers) > 0 ? var.ignore_body_changes.dbforpostgresql_flexible_servers : null
+  replace_triggers_refs = [
+    "properties.administratorLogin",
+    "properties.createMode",
+    "properties.pointInTimeUTC",
+    "properties.sourceServerResourceId",
+  ]
+  response_export_values = ["properties.fullyQualifiedDomainName"]
+  retry                  = local.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -84,11 +61,6 @@ resource "azurerm_postgresql_flexible_server" "this" {
   }
 
   lifecycle {
-    ignore_changes = [
-      zone,
-      high_availability[0].standby_availability_zone,
-    ]
-
     precondition {
       condition     = var.customer_managed_key == null ? true : var.customer_managed_key.primary_user_assigned_identity_id == null ? true : contains([for id in var.managed_identities.user_assigned_resource_ids : lower(id)], lower(var.customer_managed_key.primary_user_assigned_identity_id))
       error_message = "`customer_managed_key.primary_user_assigned_identity_id` must also be included in `managed_identities.user_assigned_resource_ids`."
@@ -101,88 +73,259 @@ resource "azurerm_postgresql_flexible_server" "this" {
 }
 
 # required AVM resources interfaces
-resource "azurerm_management_lock" "this" {
+resource "azapi_resource" "locks" {
   count = var.lock != null ? 1 : 0
 
-  lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
-  scope      = azurerm_postgresql_flexible_server.this.id
-  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+  name      = coalesce(var.lock.name, "lock-${var.lock.kind}")
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.authorization_locks
+  body = {
+    properties = {
+      level = var.lock.kind
+      notes = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+    }
+  }
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
+  response_export_values = []
+  retry                  = local.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = contains(["CanNotDelete", "ReadOnly"], var.lock.kind)
+      error_message = "The lock level must be one of: 'CanNotDelete', or 'ReadOnly'."
+    }
+  }
+
+  depends_on = [
+    azapi_resource.this,
+    azapi_resource.role_assignments,
+    azapi_resource.diagnostic_settings,
+    azapi_resource.administrators,
+    azapi_update_resource.configurations,
+    azapi_resource.virtual_endpoints,
+    azapi_resource.firewall_rules,
+    module.databases,
+    azapi_resource.private_endpoints_managed_dns_zone_groups,
+    azapi_resource.private_endpoints_unmanaged_dns_zone_groups,
+  ]
 }
 
-resource "azurerm_role_assignment" "this" {
+data "azapi_resource_list" "role_definitions" {
+  count = length(var.role_assignments) > 0 ? 1 : 0
+
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.authorization_role_definitions
+  response_export_values = {
+    role_definitions = "value[].{id: id, name: properties.roleName}"
+  }
+  retry = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      read = timeouts.value.read
+    }
+  }
+}
+
+resource "random_uuid" "role_assignment" {
+  for_each = { for k, v in var.role_assignments : k => v if(v.name == null || v.name == "") && (v.role_assignment_name == null || v.role_assignment_name == "") }
+
+  keepers = {
+    scope              = azapi_resource.this.id
+    principal_id       = each.value.principal_id
+    role_definition_id = local.role_definition_ids[each.key]
+  }
+}
+
+resource "azapi_resource" "role_assignments" {
   for_each = var.role_assignments
 
-  principal_id                           = each.value.principal_id
-  scope                                  = azurerm_postgresql_flexible_server.this.id
-  condition                              = each.value.condition
-  condition_version                      = each.value.condition_version
-  delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
-  role_definition_id                     = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : null
-  role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
-  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
+  name      = each.value.name != null ? each.value.name : (each.value.role_assignment_name != null ? each.value.role_assignment_name : random_uuid.role_assignment[each.key].result)
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.authorization_role_assignments
+  body = {
+    properties = { for key, value in {
+      principalId                        = each.value.principal_id
+      roleDefinitionId                   = local.role_definition_ids[each.key]
+      description                        = each.value.description
+      condition                          = each.value.condition
+      conditionVersion                   = each.value.condition_version
+      delegatedManagedIdentityResourceId = each.value.delegated_managed_identity_resource_id
+      principalType                      = each.value.principal_type != null ? each.value.principal_type : (each.value.skip_service_principal_aad_check ? "ServicePrincipal" : null)
+    } : key => value if value != null }
+  }
+  ignore_body_changes = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
+  replace_triggers_refs = [
+    "properties.principalId",
+    "properties.roleDefinitionId",
+    "properties.principalType",
+    "properties.delegatedManagedIdentityResourceId",
+  ]
+  response_export_values = []
+  retry                  = local.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [name]
+    precondition {
+      condition     = local.role_definition_ids[each.key] != null
+      error_message = "The role definition '${each.value.role_definition_id_or_name}' was not found at the server scope. Supply a role definition resource ID or an available role name."
+    }
+  }
 }
 
-resource "azurerm_monitor_diagnostic_setting" "this" {
+resource "azapi_resource" "diagnostic_settings" {
   for_each = var.diagnostic_settings
 
-  name                           = each.value.name != null ? each.value.name : "diag-${var.name}"
-  target_resource_id             = azurerm_postgresql_flexible_server.this.id
-  eventhub_authorization_rule_id = each.value.event_hub_authorization_rule_resource_id
-  eventhub_name                  = each.value.event_hub_name
-  log_analytics_destination_type = each.value.log_analytics_destination_type
-  log_analytics_workspace_id     = each.value.workspace_resource_id
-  partner_solution_id            = each.value.marketplace_partner_resource_id
-  storage_account_id             = each.value.storage_account_resource_id
-
-  dynamic "enabled_log" {
-    for_each = each.value.log_categories
-
-    content {
-      category = enabled_log.value
+  name      = each.value.name != null ? each.value.name : "diag-${var.name}"
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.insights_diagnostic_settings
+  body = {
+    properties = {
+      storageAccountId            = each.value.storage_account_resource_id
+      workspaceId                 = each.value.workspace_resource_id
+      eventHubName                = each.value.event_hub_name
+      eventHubAuthorizationRuleId = each.value.event_hub_authorization_rule_resource_id
+      marketplacePartnerId        = each.value.marketplace_partner_resource_id
+      logAnalyticsDestinationType = each.value.log_analytics_destination_type
+      logs = concat(
+        [for cat in each.value.log_categories : {
+          category = cat
+          enabled  = true
+        }],
+        [for grp in each.value.log_groups : {
+          categoryGroup = grp
+          enabled       = true
+        }]
+      )
+      metrics = [for metric in each.value.metric_categories : {
+        category = metric
+        enabled  = true
+      }]
     }
   }
-  dynamic "enabled_log" {
-    for_each = each.value.log_groups
+  ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
+  response_export_values = []
+  retry                  = local.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
-      category_group = enabled_log.value
-    }
-  }
-
-  dynamic "metric" {
-    for_each = each.value.metric_categories
-
-    content {
-      category = metric.value
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
     }
   }
 }
 
-resource "azurerm_postgresql_flexible_server_active_directory_administrator" "this" {
+resource "azapi_resource" "administrators" {
   for_each = var.ad_administrator
 
-  object_id           = each.value.object_id
-  principal_name      = each.value.principal_name
-  principal_type      = each.value.principal_type
-  resource_group_name = azurerm_postgresql_flexible_server.this.resource_group_name
-  server_name         = azurerm_postgresql_flexible_server.this.name
-  tenant_id           = each.value.tenant_id
+  name      = each.value.object_id
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.dbforpostgresql_flexible_servers_administrators
+  body = {
+    properties = {
+      principalName = each.value.principal_name
+      principalType = each.value.principal_type
+      tenantId      = each.value.tenant_id
+    }
+  }
+  ignore_body_changes    = length(var.ignore_body_changes.dbforpostgresql_flexible_servers_administrators) > 0 ? var.ignore_body_changes.dbforpostgresql_flexible_servers_administrators : null
+  locks                  = [azapi_resource.this.id]
+  response_export_values = []
+  retry                  = local.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
-resource "azurerm_postgresql_flexible_server_configuration" "this" {
+resource "azapi_update_resource" "configurations" {
   for_each = var.server_configuration
 
   name      = each.value.name
-  server_id = azurerm_postgresql_flexible_server.this.id
-  value     = each.value.config
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.dbforpostgresql_flexible_servers_configurations
+  body = {
+    properties = {
+      source = "user-override"
+      value  = each.value.config
+    }
+  }
+  locks                  = [azapi_resource.this.id]
+  response_export_values = []
+  retry                  = local.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
-resource "azurerm_postgresql_flexible_server_virtual_endpoint" "this" {
+resource "azapi_resource" "virtual_endpoints" {
   for_each = var.virtual_endpoint
 
-  name              = each.value.name
-  replica_server_id = each.value.replica_server_id
-  source_server_id  = azurerm_postgresql_flexible_server.this.id
-  type              = each.value.type
+  name      = each.value.name
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.dbforpostgresql_flexible_servers_virtual_endpoints
+  body = {
+    properties = {
+      endpointType = each.value.type
+      members      = [try(provider::azapi::parse_resource_id("Microsoft.DBforPostgreSQL/flexibleServers", each.value.replica_server_id).resource_name, element(split("/", each.value.replica_server_id), length(split("/", each.value.replica_server_id)) - 1))]
+    }
+  }
+  ignore_body_changes    = length(var.ignore_body_changes.dbforpostgresql_flexible_servers_virtual_endpoints) > 0 ? var.ignore_body_changes.dbforpostgresql_flexible_servers_virtual_endpoints : null
+  locks                  = [azapi_resource.this.id]
+  response_export_values = []
+  retry                  = local.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }

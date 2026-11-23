@@ -1,10 +1,10 @@
 terraform {
-  required_version = ">= 1.9, < 2.0"
+  required_version = ">= 1.11, < 2.0"
 
   required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.12"
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.12"
     }
     random = {
       source  = "hashicorp/random"
@@ -13,15 +13,15 @@ terraform {
   }
 }
 
-provider "azurerm" {
-  features {}
-}
+provider "azapi" {}
+
+data "azapi_client_config" "current" {}
 
 ## Section to provide a random Azure region for the resource group
 # This allows us to randomize the region for the resource group.
 module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2"
+  source  = "Azure/regions/azapi"
+  version = "~> 0.1"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -39,9 +39,11 @@ module "naming" {
 }
 
 # This is required for resource modules
-resource "azurerm_resource_group" "this" {
-  location = "australiaeast" #module.regions.regions[random_integer.region_index.result].name
-  name     = module.naming.resource_group.name_unique
+resource "azapi_resource" "resource_group" {
+  type      = "Microsoft.Resources/resourceGroups@2024-03-01"
+  name      = module.naming.resource_group.name_unique
+  parent_id = data.azapi_client_config.current.subscription_resource_id
+  location  = "australiaeast"
 }
 
 resource "random_password" "myadminpassword" {
@@ -51,15 +53,12 @@ resource "random_password" "myadminpassword" {
 }
 
 # This is the module call
-# Do not specify location here due to the randomization above.
-# Leaving location as `null` will cause the module to use the resource group location
-# with a data source.
 module "test" {
   source = "../../"
 
-  location                     = azurerm_resource_group.this.location
+  location                     = azapi_resource.resource_group.location
   name                         = module.naming.postgresql_server.name_unique
-  resource_group_name          = azurerm_resource_group.this.name
+  resource_group_name          = azapi_resource.resource_group.name
   administrator_login          = "psqladmin"
   administrator_password       = random_password.myadminpassword.result
   enable_telemetry             = var.enable_telemetry
